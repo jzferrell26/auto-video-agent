@@ -1,0 +1,25 @@
+{
+  "_comment": "Sample lesson map. This drives build-lessons.mjs (render) and ghl-publish-complete.mjs (deliver). Brand (theme, logo) and content are all inputs here; nothing is hardcoded in the engine. Replace with your own recording's timecodes and copy.",
+  "module": "Demo Module",
+  "slug": "demo",
+  "courseTitle": "Your Course Title Here",
+  "coverEyebrow": "A Training with Your Name",
+  "coverSubtitle": "A one-line hook for the course cover.",
+  "courseDescription": "A compelling multi-paragraph course description.\n\nWrite it in your own voice: the problem, what the course covers, and who it's for.\n\nAcross N short, standalone lessons, you'll learn how to do X, Y, and Z.\n\nWatch in any order.",
+  "theme": {
+    "cream": "#f4f4f5",
+    "slate": "#18181b",
+    "teal": "#3f6f6a",
+    "gold": "#c2a45f",
+    "sage": "#8a8a94"
+  },
+  "logo": "https://example.com/your-logo.png",
+  "instructor": {
+    "name": "Instructor Name",
+    "description": "A short instructor bio. Title, credibility, and what they teach."
+  },
+  "lessons": [
+    { "number": 1, "title": "First Lesson Title", "desc": "One-line description of what this lesson covers.", "inSec": 120, "outSec": 360 },
+    { "number": 2, "title": "Second Lesson Title", "desc": "One-line description of what this lesson covers.", "inSec": 360, "outSec": 620 }
+  ]
+}
