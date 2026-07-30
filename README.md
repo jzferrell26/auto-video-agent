@@ -4,6 +4,13 @@ Turn a long recording into **branded, captioned course lessons and short social 
 deliver them (optionally straight into a GoHighLevel membership as a draft course). Built for
 developers and operators who want to repurpose webinars, talks, and Zoom recordings at scale.
 
+## Repository status
+
+**Superseded prototype.** The active continuation is
+[`jzferrell26/ai-video`](https://github.com/jzferrell26/ai-video), which contains this
+project's core files plus newer work. This repository remains available as the original,
+focused implementation of the video-processing engine.
+
 > **Licensing, read first.** This project's code is **MIT**. It renders on **Remotion**, which
 > is *source-available, not MIT*: free for individuals, non-profits, and companies of 3 or fewer
 > employees (and non-commercial evaluation), but a **paid Company License is required for companies
