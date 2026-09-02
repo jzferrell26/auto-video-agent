@@ -30,7 +30,7 @@ const DEFAULT_THEME: BrandTheme = {
   sage: "#8a8a94",
 };
 
-export interface CaptionedShortProps {
+export type CaptionedShortProps = {
   theme?: Partial<BrandTheme>;
   logo?: string;
   eyebrow?: string;
@@ -39,7 +39,7 @@ export interface CaptionedShortProps {
   wordsPerPage?: number;
   width?: number;
   height?: number;
-}
+};
 
 const FPS = 30;
 

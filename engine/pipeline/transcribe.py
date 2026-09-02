@@ -1,7 +1,7 @@
 """Word-level timings from an audio file via faster-whisper (free, local, CPU).
 Writes a captions JSON: [{ "word", "startMs", "endMs" }, ...].
 
-Usage: python scripts/transcribe.py <audio.wav> <out.json>
+Usage: python engine/pipeline/transcribe.py <audio.wav> <out.json>
 """
 import json
 import sys

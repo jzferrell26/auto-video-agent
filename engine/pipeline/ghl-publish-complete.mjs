@@ -1,95 +1,103 @@
-// Render cover + thumbnails, upload cover + thumbnails + lesson videos to GoHighLevel
-// media, then import a COMPLETE draft course. One command per session.
-//
-// Usage: node ghl-publish-complete.mjs <lessonMapJson> <slug>
-// Requires env: GHL_LOCATION_ID, GHL_PIT (a sub-account Private Integration Token with
-// courses.write + medias.write). Nothing is tied to a specific account: location + token
-// come from the environment, brand + content come from the lesson map.
-//
-// The lesson map must include: courseTitle, courseDescription, module, coverEyebrow,
-// coverSubtitle, instructor{name,description}, theme?, logo?, lessons[]{number,title,desc}.
-// Everything imports as DRAFT; nothing publishes automatically.
-import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+// Explicitly gated external delivery. The default is a local-only preview.
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { z } from "zod";
+import { ROOT, assertNew, deliveryMapSchema, main, outputDirectory, readJson, render, slugSchema, writeJson } from "./runtime.mjs";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BASE = "https://services.leadconnectorhq.com";
+const envSchema = z.object({ GHL_LOCATION_ID: z.string().min(1), GHL_PIT: z.string().min(1) });
+const uploadSchema = z.object({ url: z.url().refine((url) => url.startsWith("https://"), "Expected HTTPS media URL.") });
+const importSchema = z.object({ processingCourses: z.array(z.object({ id: z.string().min(1) })).min(1) });
 
-const LOCATION_ID = process.env.GHL_LOCATION_ID;
-const PIT = process.env.GHL_PIT;
-if (!LOCATION_ID || !PIT) {
-  console.error("Set GHL_LOCATION_ID and GHL_PIT in your environment (see .env.example).");
-  process.exit(1);
+export function buildCoursePayload(map, locationId, coverUrl, posts) {
+  return {
+    locationId,
+    products: [{
+      title: map.courseTitle, description: map.courseDescription, imageUrl: coverUrl,
+      categories: [{ title: map.module, visibility: "draft", thumbnailUrl: coverUrl,
+        posts: posts.map((post) => ({ ...post, visibility: "draft" })) }],
+      instructorDetails: map.instructor,
+    }],
+  };
 }
 
-const req = createRequire(resolve(root, "package.json"));
-const cliPkg = req.resolve("@remotion/cli/package.json");
-const cliJson = JSON.parse(readFileSync(cliPkg, "utf-8"));
-const REMOTION = resolve(dirname(cliPkg), typeof cliJson.bin === "string" ? cliJson.bin : cliJson.bin.remotion);
-
-const DEFAULT_THEME = { cream: "#f4f4f5", slate: "#18181b", teal: "#3f6f6a", gold: "#c2a45f", sage: "#8a8a94" };
-
-const mapPath = process.argv[2];
-const slug = process.argv[3];
-const map = JSON.parse(readFileSync(resolve(root, mapPath), "utf-8"));
-const theme = map.theme || DEFAULT_THEME;
-
-const still = (comp, props, out, frame) =>
-  execFileSync(process.execPath, [REMOTION, "still", "src/index.tsx", comp, out, `--props=${props}`, `--frame=${frame}`], { cwd: root, stdio: "ignore" });
-
-// 1. Render cover + thumbnails.
-console.log("=== rendering cover + thumbnails ===");
-const coverProps = resolve(root, "brand-props", `cover-${slug}.json`);
-writeFileSync(coverProps, JSON.stringify({ theme, logo: map.logo, eyebrow: map.coverEyebrow, title: map.courseTitle, subtitle: map.coverSubtitle }));
-const coverPng = resolve(root, "out", `cover-${slug}.png`);
-still("CourseCover", coverProps, coverPng, 40);
-for (const l of map.lessons) {
-  const p = resolve(root, "brand-props", `${slug}-L${String(l.number).padStart(2, "0")}.json`);
-  const out = resolve(root, "out/thumbs", `${slug}-L${String(l.number).padStart(2, "0")}.png`);
-  still("LessonVideo", p, out, 55);
+export async function checkedJson(response, schema, operation) {
+  // Provider errors can echo credentials or content. Never print their bodies.
+  if (!response.ok) throw new Error(operation + " failed (HTTP " + response.status + "). Inspect the provider dashboard privately.");
+  let value;
+  try { value = await response.json(); } catch { throw new Error(operation + " returned non-JSON data."); }
+  const result = schema.safeParse(value);
+  if (!result.success) throw new Error(operation + " returned an unexpected response. Inspect the provider dashboard before retrying.");
+  return result.data;
 }
 
-// 2. Upload helper.
-async function upload(path, name, type) {
-  const fd = new FormData();
-  fd.set("file", new Blob([readFileSync(path)], { type }), name);
-  fd.set("name", name);
-  const r = await fetch(`${BASE}/medias/upload-file`, { method: "POST", headers: { Authorization: `Bearer ${PIT}`, Version: "v3" }, body: fd });
-  const j = await r.json();
-  if (!r.ok || !j.url) throw new Error(`upload ${name} failed: ${r.status} ${JSON.stringify(j)}`);
-  return j.url;
+export async function deliver(args) {
+  if (args.includes("--help")) {
+    console.log("Usage: npm run deliver:ghl -- <map.json> <slug> [--upload-and-import]\nWithout the flag: local preview only. With it: uploads media and creates a draft course. Manual dashboard verification is required.");
+    return;
+  }
+  if (args.length < 2 || args.length > 3 || (args[2] && args[2] !== "--upload-and-import")) {
+    throw new Error("Expected map JSON, slug and optional --upload-and-import. Use --help.");
+  }
+  const map = readJson(args[0], deliveryMapSchema);
+  const slug = slugSchema.parse(args[1]);
+  if (!args.includes("--upload-and-import")) {
+    console.log("DRY RUN: " + map.lessons.length + " lesson(s). No credentials read, renders, uploads or imports.\nRender and review lessons first; add --upload-and-import only to authorize external delivery.");
+    return;
+  }
+  const envFile = join(ROOT, ".env");
+  if (existsSync(envFile)) process.loadEnvFile(envFile);
+  const env = envSchema.parse(process.env);
+  // Validate ALL required local artifacts before any render or network operation.
+  for (const lesson of map.lessons) {
+    const tag = slug + "-L" + String(lesson.number).padStart(2, "0");
+    for (const file of [join(ROOT, "out/lessons", tag + ".mp4"), join(ROOT, "brand-props", tag + ".json")]) {
+      if (!statSync(file).isFile()) throw new Error("A required lesson artifact is missing.");
+    }
+  }
+  const deliveryDir = outputDirectory("out/delivery");
+  const directory = join(deliveryDir, slug);
+  assertNew([directory]);
+  outputDirectory("out/delivery/" + slug);
+  // A partial attempt is deliberately not retried automatically, even after a process crash.
+  writeJson(join(directory, "attempt.json"), { startedAt: new Date().toISOString(), state: "started", lessonCount: map.lessons.length });
+  const coverProps = join(directory, "cover.json");
+  const coverPng = join(directory, "cover.png");
+  writeJson(coverProps, { theme: map.theme, logo: map.logo, eyebrow: map.coverEyebrow, title: map.courseTitle, subtitle: map.coverSubtitle });
+  render(["still", "src/index.tsx", "CourseCover", coverPng, "--props=" + coverProps, "--frame=40"]);
+  const jobs = map.lessons.map((lesson) => {
+    const tag = slug + "-L" + String(lesson.number).padStart(2, "0");
+    return { lesson, tag, thumbnail: join(directory, tag + ".png"), video: join(ROOT, "out/lessons", tag + ".mp4") };
+  });
+  for (const job of jobs) {
+    render(["still", "src/index.tsx", "LessonVideo", job.thumbnail, "--props=" + join(ROOT, "brand-props", job.tag + ".json"), "--frame=55"]);
+  }
+  async function upload(file, name, type) {
+    const data = new FormData();
+    data.set("file", new Blob([readFileSync(file)], { type }), name);
+    data.set("name", name);
+    const response = await fetch(BASE + "/medias/upload-file", {
+      method: "POST", headers: { Authorization: "Bearer " + env.GHL_PIT, Version: "v3" },
+      body: data, signal: AbortSignal.timeout(300000), redirect: "error",
+    });
+    return (await checkedJson(response, uploadSchema, "Media upload")).url;
+  }
+  const coverUrl = await upload(coverPng, slug + "-cover.png", "image/png");
+  const posts = [];
+  for (const job of jobs) {
+    posts.push({
+      title: job.lesson.title, contentType: "video", description: job.lesson.desc,
+      thumbnailUrl: await upload(job.thumbnail, job.tag + ".png", "image/png"),
+      bucketVideoUrl: await upload(job.video, job.tag + ".mp4", "video/mp4"),
+    });
+  }
+  const response = await fetch(BASE + "/courses/courses-exporter/public/import", {
+    method: "POST", headers: { Authorization: "Bearer " + env.GHL_PIT, Version: "2021-07-28", "Content-Type": "application/json" },
+    body: JSON.stringify(buildCoursePayload(map, env.GHL_LOCATION_ID, coverUrl, posts)),
+    signal: AbortSignal.timeout(60000), redirect: "error",
+  });
+  const result = await checkedJson(response, importSchema, "Course import");
+  writeJson(join(directory, "result.json"), { state: "accepted", processingCourseIds: result.processingCourses.map((course) => course.id) });
+  console.log("Import accepted for asynchronous processing. Verify media, course contents and draft status in your dashboard. Nothing was auto-published.");
 }
-
-console.log("=== uploading cover + videos + thumbnails ===");
-const coverUrl = await upload(coverPng, `${slug}-cover.png`, "image/png");
-const posts = [];
-for (const l of map.lessons) {
-  const nn = String(l.number).padStart(2, "0");
-  const videoUrl = await upload(resolve(root, "out/lessons", `${slug}-L${nn}.mp4`), `${slug}-L${nn}.mp4`, "video/mp4");
-  const thumbUrl = await upload(resolve(root, "out/thumbs", `${slug}-L${nn}.png`), `${slug}-L${nn}-thumb.png`, "image/png");
-  console.log(`  L${l.number} video + thumb uploaded`);
-  posts.push({ title: l.title, visibility: "draft", contentType: "video", description: l.desc, thumbnailUrl: thumbUrl, bucketVideoUrl: videoUrl });
-}
-
-// 3. Import complete (draft).
-const payload = {
-  locationId: LOCATION_ID,
-  products: [{
-    title: map.courseTitle,
-    description: map.courseDescription,
-    imageUrl: coverUrl,
-    categories: [{ title: map.module, visibility: "draft", thumbnailUrl: coverUrl, posts }],
-    instructorDetails: map.instructor,
-  }],
-};
-console.log("=== importing COMPLETE course (draft) ===");
-const r = await fetch(`${BASE}/courses/courses-exporter/public/import`, {
-  method: "POST",
-  headers: { Authorization: `Bearer ${PIT}`, Version: "2021-07-28", "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-});
-console.log("HTTP", r.status);
-console.log(JSON.stringify(await r.json(), null, 2));
+main(import.meta.url, deliver);

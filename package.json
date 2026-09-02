@@ -1,0 +1,39 @@
+{
+  "name": "auto-video-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Student-friendly local video workflows with configurable branding and captions.",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=22.0.0" },
+  "scripts": {
+    "studio": "remotion studio src/index.tsx",
+    "demo": "node scripts/render-demo.mjs",
+    "demo:media": "node scripts/prepare-demo.mjs",
+    "compositions": "remotion compositions src/index.tsx",
+    "build": "remotion bundle src/index.tsx build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "check:hygiene": "node scripts/check-hygiene.mjs",
+    "check": "npm run typecheck && npm test && npm run check:hygiene",
+    "render:platforms": "node engine/pipeline/render-platforms.mjs",
+    "build:lessons": "node engine/pipeline/build-lessons.mjs",
+    "deliver:ghl": "node engine/pipeline/ghl-publish-complete.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.520",
+    "@remotion/google-fonts": "4.0.520",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.520",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "@vitest/coverage-v8": "4.1.11",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}

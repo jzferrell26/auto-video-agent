@@ -1,87 +1,116 @@
 # auto-video-agent
 
-Turn a long recording into **branded, captioned course lessons and short social clips**, then
-deliver them (optionally straight into a GoHighLevel membership as a draft course). Built for
-developers and operators who want to repurpose webinars, talks, and Zoom recordings at scale.
+Turn your recordings into captioned lessons and social clips with your own branding.
 
-## Repository status
+[![CI](https://github.com/jzferrell26/auto-video-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jzferrell26/auto-video-agent/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/github/package-json/v/jzferrell26/auto-video-agent)](package.json)
+[![License](https://img.shields.io/github/license/jzferrell26/auto-video-agent)](LICENSE)
 
-**Superseded prototype.** The active continuation is
-[`jzferrell26/ai-video`](https://github.com/jzferrell26/ai-video), which contains this
-project's core files plus newer work. This repository remains available as the original,
-focused implementation of the video-processing engine.
+## Quickstart
 
-> **Licensing, read first.** This project's code is **MIT**. It renders on **Remotion**, which
-> is *source-available, not MIT*: free for individuals, non-profits, and companies of 3 or fewer
-> employees (and non-commercial evaluation), but a **paid Company License is required for companies
-> with more than 3 employees using it commercially**. See [`NOTICE.md`](NOTICE.md) and
-> https://www.remotion.dev/docs/license. A Revideo (MIT) render path is a planned follow-up.
+Install [Node.js 22+](https://nodejs.org/en/download) and Git. Then run:
 
-## What it does
-
-```
-long video
-  -> transcribe (faster-whisper: word + segment timestamps)
-  -> segment into a lesson map (titles + timecodes; author by hand or from the transcript)
-  -> clip each lesson (ffmpeg, frame-accurate)
-  -> brand each: intro card + burned-in captions + outro (Remotion) -> MP4
-  -> export MP4s + a manifest   (and/or deliver: GoHighLevel course import)
+```bash
+git clone https://github.com/jzferrell26/auto-video-agent.git
+cd auto-video-agent
+npm ci
+npm run check
+npm run demo
 ```
 
-It also renders **generative branded shorts** from a brief and **9:16 micro clips** from
-highlight moments of the same source. Brand (colors, fonts, logo) is an input, not hardcoded.
+The demo creates a silent, text-only MP4 at `out/demo-<unique-id>/demo.mp4`.
+No footage, API keys, paid AI account, or FFmpeg installation is needed for this first render.
+The first render downloads a browser runtime and fonts, so internet access is required.
 
-## Components (`engine/remotion`)
+Use **Use this template > Create a new repository** if you want your own student copy.
+Replace the links and CODEOWNERS identity in that copy.
 
-| Composition | Output |
-|---|---|
-| `LessonVideo` | Course lesson: branded intro + real footage with burned-in captions + outro |
-| `MicroClip` | 9:16 social clip: footage in a branded vertical frame with captions |
-| `CourseCover` | Static branded course cover image |
-| `BrandedShort` | Generative branded short from a brief (per-platform 9:16 / 1:1 / 16:9) |
-| `CaptionedShort` | Caption-first: VO + burned-in word-level captions |
+[Features](#features) · [Install](#install) · [Usage](#usage) · [Configuration](#configuration) · [Contributing](#contributing) · [License](#license)
 
-## Pipeline (`engine/pipeline`)
+## Features
 
-| Script | Does |
-|---|---|
-| `transcribe_full.py` | Full-session transcript: segments + words + readable text |
-| `transcribe.py` | Word-level caption timings from audio |
-| `build-lessons.mjs` | Lesson map -> clipped, branded, captioned lesson MP4s |
-| `ghl-publish-complete.mjs` | Upload media + import a complete draft course to GoHighLevel |
-| `render-platforms.mjs` | One brief -> per-platform renders (9:16 / 1:1 / 16:9) |
+- Create animated text shorts from an editable JSON brief.
+- Render the same brief in vertical, square and landscape formats.
+- Cut lessons from a recording with an explicit timestamp map.
+- Burn word-timed captions into lessons, voiceovers and short clips.
+- Customize colors, logos, titles and copy per job.
+- Generate synthetic practice footage without sharing client recordings.
+- Preview optional GoHighLevel delivery locally before explicitly authorizing uploads.
 
-## Prerequisites
+This is a file-driven toolkit, not an autonomous video director. You choose the cuts,
+review captions and approve the results. It does not generate a script, select highlights,
+guarantee conversions, or publish content automatically.
 
-- Node 22+, Python 3.11+, FFmpeg on PATH
-- `pip install faster-whisper`
-- A Remotion host project (a `package.json` with Remotion deps + a `src/index.tsx` registering
-  the compositions). The components import only `remotion` + `@remotion/google-fonts`.
+## Install
+
+The quickstart installs the included Remotion host and pinned npm dependencies.
+For Studio, run `npm run studio`.
+
+For recording-based lessons and synthetic footage, install [FFmpeg](https://ffmpeg.org/download.html)
+and ensure both `ffmpeg` and `ffprobe` are on PATH.
+
+For optional local transcription, install Python 3.11+ and `faster-whisper` in a virtual
+environment. See [setup and troubleshooting](docs/getting-started.md). You do not need
+Python for the text demo.
+
+## Usage
+
+### Make a short in three formats
+
+Render the included brief with a new output name:
+
+```bash
+npm run render:platforms -- engine/examples/demo-short.json practice
+```
+
+Outputs: `out/practice-9x16.mp4`, `out/practice-1x1.mp4`, and
+`out/practice-16x9.mp4`. Use a new slug for another run; scripts refuse to replace outputs.
+
+### Practice cutting lessons
+
+With FFmpeg installed:
+
+```bash
+npm run demo:media
+npm run build:lessons -- public/demo/source.mp4 public/demo/captions.json engine/examples/demo-course.json practice
+```
+
+This creates two lessons under `out/lessons/`. The practice source uses a test pattern
+and test tone. Its captions are invented, not a transcription.
+
+### Inspect optional delivery
+
+Preview the delivery plan locally:
+
+```bash
+npm run deliver:ghl -- engine/examples/demo-course.json practice
+```
+
+This defaults to a local preview. It does not read delivery credentials, render, upload,
+or import. Actual delivery is an advanced, opt-in workflow described in
+[the delivery guide](docs/ghl-delivery.md).
 
 ## Configuration
 
-Nothing is hardcoded to an account or brand. See [`.env.example`](.env.example):
+Your theme, logo and content belong in job JSON, not the engine. Copy examples into
+`brand-props/` for local customization; keep your recordings in `_sources/`.
+Both directories, `public/`, and `out/` are ignored by Git.
 
-```
-GHL_LOCATION_ID=      # your GoHighLevel sub-account id (delivery only)
-GHL_PIT=              # a Private Integration Token with courses.write + medias.write
-```
+The optional delivery adapter reads `GHL_LOCATION_ID` and `GHL_PIT` from your
+environment or ignored `.env`. Both default to unset. No credentials are needed for local rendering.
 
-Brand (theme colors, fonts, logo) is passed per job via the lesson map / props. A neutral demo
-brand ships in [`engine/examples`](engine/examples); real brands and content stay out of the repo.
+See [the engine reference](engine/README.md) for compositions, commands and data formats,
+and [safe student workflows](docs/student-workflow.md) for privacy and review checkpoints.
 
-## Delivery to GoHighLevel
+## Contributing
 
-Optional. See [`docs/ghl-delivery.md`](docs/ghl-delivery.md) for the verified API contracts
-(Import Courses, Media Upload, scopes, `bucketVideoUrl`, size limits). Everything imports as
-**draft**, nothing publishes automatically.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Run `npm run check` before opening a pull request.
+Use [SUPPORT.md](SUPPORT.md) for help and [SECURITY.md](SECURITY.md) for private vulnerability reports.
 
-## Layout
+## License
 
-```
-engine/
-  remotion/   render components (brand is an input)
-  pipeline/   transcribe, build-lessons, publish, per-platform
-  examples/   neutral demo brand + sample map (no client data)
-docs/         engine choice, GHL delivery reference
-```
+Project source is licensed under the [MIT License](LICENSE).
+
+Remotion uses a separate source-available license, not MIT. FFmpeg, fonts, model weights,
+music and your own media have separate terms. Read [NOTICE.md](NOTICE.md) before
+commercial use or redistribution. The project license does not license your input media.

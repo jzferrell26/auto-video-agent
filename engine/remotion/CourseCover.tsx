@@ -12,13 +12,13 @@ const DEFAULT_THEME: BrandTheme = {
   sage: "#8a8a94",
 };
 
-export interface CourseCoverProps {
+export type CourseCoverProps = {
   theme?: Partial<BrandTheme>;
   logo?: string;
   eyebrow?: string;
   title: string;
   subtitle?: string;
-}
+};
 
 const Glow: React.FC<{ base: string; glow: string }> = ({ base, glow }) => {
   const frame = useCurrentFrame();

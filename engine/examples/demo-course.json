@@ -13,13 +13,12 @@
     "gold": "#c2a45f",
     "sage": "#8a8a94"
   },
-  "logo": "https://example.com/your-logo.png",
   "instructor": {
     "name": "Instructor Name",
     "description": "A short instructor bio. Title, credibility, and what they teach."
   },
   "lessons": [
-    { "number": 1, "title": "First Lesson Title", "desc": "One-line description of what this lesson covers.", "inSec": 120, "outSec": 360 },
-    { "number": 2, "title": "Second Lesson Title", "desc": "One-line description of what this lesson covers.", "inSec": 360, "outSec": 620 }
+    { "number": 1, "title": "First Lesson Title", "desc": "One-line description of what this lesson covers.", "inSec": 0, "outSec": 3 },
+    { "number": 2, "title": "Second Lesson Title", "desc": "One-line description of what this lesson covers.", "inSec": 3, "outSec": 6 }
   ]
 }
