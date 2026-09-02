@@ -1,0 +1,8 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "scenes": [
+    { "type": "intro", "eyebrow": "YOUR FIRST VIDEO", "headline": "Make something worth sharing.", "seconds": 3 },
+    { "type": "outro", "quote": "Your story. Your style.", "signoff": "Built with Auto Video Agent", "seconds": 3 }
+  ]
+}

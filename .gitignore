@@ -1,18 +1,28 @@
-# Engine trials and renders — never committed until the engine decision is made.
-# Keeps AGPL (OpenMontage) code and heavy render output out of the tree.
+# Local experiments and source recordings
 _experiments/
+_sources/
+sources/
+brand-props/
+public/
+tmp/
 
 # Node
 node_modules/
 npm-debug.log*
 pnpm-debug.log*
 .pnpm-store/
+dist/
+build/
+.cache/
+coverage/
 
 # Python
 .venv/
 venv/
 __pycache__/
 *.pyc
+*.egg-info/
+.pytest_cache/
 
 # Remotion / render output
 out/
@@ -20,16 +30,42 @@ renders/
 *.mp4
 *.mov
 *.webm
+*.mkv
+*.avi
+*.m4v
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.flac
+*.srt
+*.vtt
+*.words.json
+*.segments.json
+*.transcript.txt
 
 # Env / secrets
 .env
 .env.*
 !.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+serviceAccount*.json
+.aws/
+.gcp/
 
 # OS / editor
 .DS_Store
 Thumbs.db
 *.log
+.idea/
+.vscode/
 
 # Internal QA/reports (not for a public tool repo)
 library/
+/.scan-output/
+/reports/scan-output/

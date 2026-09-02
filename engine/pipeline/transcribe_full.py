@@ -4,7 +4,7 @@ Outputs three artifacts next to the audio/video:
   <base>.words.json    : [{ "word","startMs","endMs" }] (for burned-in captions)
   <base>.transcript.txt: human-readable "[mm:ss] text" for proposing the lesson map
 
-Usage: python scripts/transcribe_full.py <audio-or-video> [model]
+Usage: python engine/pipeline/transcribe_full.py <audio-or-video> [model]
 faster-whisper reads media directly (ffmpeg under the hood), so a raw .mp4 works.
 """
 import json

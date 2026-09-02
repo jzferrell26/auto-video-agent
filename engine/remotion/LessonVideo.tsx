@@ -30,7 +30,7 @@ const DEFAULT_THEME: BrandTheme = {
   sage: "#8a8a94",
 };
 
-export interface LessonVideoProps {
+export type LessonVideoProps = {
   theme?: Partial<BrandTheme>;
   logo?: string;
   moduleTitle: string;
@@ -46,7 +46,7 @@ export interface LessonVideoProps {
   wordsPerPage?: number;
   width?: number;
   height?: number;
-}
+};
 
 const FPS = 30;
 

@@ -1,0 +1,21 @@
+name: Feature request
+description: Propose a focused improvement for the video workflow.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or learning objective
+      description: Describe the workflow without using private client examples.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and tradeoffs
+      description: Include setup complexity, external services, licensing or privacy implications.

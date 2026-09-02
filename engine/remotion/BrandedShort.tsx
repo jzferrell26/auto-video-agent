@@ -38,14 +38,14 @@ type Scene =
   | { type: "list"; eyebrow?: string; items: string[]; seconds: number }
   | { type: "outro"; quote: string; signoff: string; seconds: number };
 
-export interface BrandedShortProps {
+export type BrandedShortProps = {
   theme?: Partial<BrandTheme>;
   logo?: string;
   scenes: Scene[];
   // Per-platform render target. Defaults to 9:16 (1080x1920).
   width?: number;
   height?: number;
-}
+};
 
 const FPS = 30;
 

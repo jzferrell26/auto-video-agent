@@ -1,54 +1,104 @@
-# engine/
+# Engine reference
 
-The original, license-clean core of auto-video-agent. Everything here is original work:
-the brand-native render components and the pipeline scripts. It imports only Remotion and
-`@remotion/google-fonts`, no OpenMontage / AGPL code. This is the reference implementation;
-if we move engines (see [`../docs/engine-decision.md`](../docs/engine-decision.md)), the
-component shapes and props contracts port directly.
+The root project registers all five components in `src/Root.tsx`. No separate host
+project or private repository is required.
 
-> The disposable OpenMontage trial host, `node_modules`, downloaded client videos, transcripts,
-> and rendered MP4s live in the gitignored `_experiments/` and are never committed. `engine/` is
-> the canonical source; `_experiments/` is a throwaway runtime.
+## Commands
 
-## remotion/ — brand-native scene components
+Run from the repository root. Node pipeline scripts also resolve relative input paths
+from the root, not from `engine/`.
 
-| File | Composition | Output |
+| Command | Result |
+|---|---|
+| `npm run studio` | Local Remotion editor |
+| `npm run compositions` | Registered composition metadata |
+| `npm run demo` | New text-only demo render |
+| `npm run demo:media` | Six-second synthetic video, audio and invented captions |
+| `npm run render:platforms -- <brief.json> <slug>` | Three aspect-ratio renders |
+| `npm run build:lessons -- <video> <words.json> <map.json> <slug>` | Clipped, captioned lessons |
+| `npm run deliver:ghl -- <map.json> <slug>` | Local delivery preview, no network |
+| `npm run build` | Bundle for local build verification, not deployment |
+
+Slugs contain 1-64 letters, digits, hyphens or underscores and must begin with a letter
+or digit. Local CLI commands validate JSON and refuse existing outputs. A failed run
+may leave partial files; inspect them before deliberately removing or retrying.
+
+## Compositions
+
+| ID | Output | Main inputs |
 |---|---|---|
-| `BrandedShort.tsx` | `BrandedShort` | Generative branded short from a brief (brand spec + scenes -> MP4). Per-platform via `width`/`height` props. |
-| `CaptionedShort.tsx` | `CaptionedShort` | Caption-first: VO audio + burned-in word-level captions. |
-| `LessonVideo.tsx` | `LessonVideo` | Course lesson: branded intro card + real footage (`OffthreadVideo`) + burned-in captions + outro. |
-| `fonts.ts` | (shared) | Loads Cormorant Garamond + DM Sans via `@remotion/google-fonts`. |
+| `BrandedShort` | Animated text short | `scenes`, optional theme/logo/width/height |
+| `CourseCover` | Still cover | `title`, optional eyebrow/subtitle/theme/logo |
+| `LessonVideo` | Intro, footage, captions, outro | Module/lesson titles, videoSrc, clipSeconds, captions |
+| `MicroClip` | Vertical framed footage | videoSrc, clipSeconds, captions, optional hook |
+| `CaptionedShort` | Caption-first voiceover | audio, captions, optional eyebrow |
 
-Each component exports a `calculate*Metadata` that sets duration (and width/height) from props.
-The **brand spec is the input**: pass `theme` (cream/slate/teal/gold/sage) + `logo` + content via
-`--props`. To run, register the compositions in a Remotion `Root.tsx`, e.g.:
+BrandedShort and CourseCover work without media. Run `npm run demo:media` once
+before opening the other three default examples in Studio. Those defaults use the
+synthetic files under `public/demo/`.
 
-```tsx
-import { BrandedShort, calculateBrandedShortMetadata } from "./remotion/BrandedShort";
-<Composition id="BrandedShort" component={BrandedShort} fps={30} width={1080} height={1920}
-  durationInFrames={30 * 27} defaultProps={{ scenes: [] }} calculateMetadata={calculateBrandedShortMetadata} />
+```bash
+npx remotion still src/index.tsx CourseCover out/course-cover.png --frame=40
 ```
 
-> **Running:** `engine/` is the source of truth, not a standalone app. To run it, drop these
-> files into a Remotion host project (a `package.json` with the Remotion deps + a `src/index.tsx`
-> that registers the compositions). The `pipeline/` scripts resolve the Remotion CLI from that
-> host's root and render from there. In development the host is the gitignored `_experiments/`
-> trial; `engine/` is what we keep and port when the engine is chosen.
+Direct Remotion commands are lower-level tools and can overwrite their explicit
+output path; choose a new filename. The overwrite protection described above belongs
+to this project's Node wrappers.
 
-## pipeline/ — the free, local processing scripts
+## Input formats
 
-| File | Does |
-|---|---|
-| `transcribe.py` | Word-level timings from audio (faster-whisper) -> captions JSON. |
-| `transcribe_full.py` | Full-session transcript: `.segments.json` + `.words.json` + readable `.transcript.txt` (for proposing a lesson map). |
-| `render-platforms.mjs` | One brief -> per-platform renders (9:16 / 1:1 / 16:9). Single-sourced content, injects width/height. |
+A caption array uses milliseconds:
 
-Course-builder flow (proven): source video -> `transcribe_full.py` -> propose lesson map from the
-transcript -> `ffmpeg -ss/-to` frame-accurate clip per lesson -> `LessonVideo` (brand + captions) ->
-course-ready MP4. Social shorts come off the same source via `BrandedShort` / clips.
+```json
+[{ "word": "Example", "startMs": 0, "endMs": 500 }]
+```
 
-## examples/
+A lesson map uses seconds:
 
-`demo-course.json` — a generic, PII-free lesson map (brand spec + placeholder content) that drives
-`build-lessons.mjs` and `ghl-publish-complete.mjs`. Copy it and replace the theme, copy, and
-timecodes with your own. Client-derived props (real transcripts/captions/audio) are never committed.
+```json
+{
+  "module": "Practice",
+  "lessons": [
+    { "number": 1, "title": "First idea", "inSec": 0, "outSec": 3 }
+  ]
+}
+```
+
+Lesson end must follow start and stay within the source duration. Words starting in
+the retained interval are rebased; tails are clipped at the lesson end. Review cuts
+that may split spoken words.
+
+Theme keys are `cream`, `slate`, `teal`, `gold`, and `sage`, each a CSS color.
+The shared fonts are Cormorant Garamond and DM Sans. Font loading can require network
+access. A logo is optional; no real brand assets are bundled.
+
+Media paths in composition props are relative to `public/`, or explicit remote URLs.
+Prefer local assets and never include credentials or signed URLs in committed props.
+Only use trusted assets and configurations. These tools are not a secure hosted
+rendering service for arbitrary submissions.
+
+## Transcription
+
+After installing the optional Python tools and adding your own input files, run:
+
+```bash
+python engine/pipeline/transcribe_full.py _sources/session.mp4 base.en
+python engine/pipeline/transcribe.py _sources/voice.wav brand-props/captions.json
+```
+
+Create `brand-props/` before the second command. Full transcription writes
+`.segments.json`, `.words.json`, and `.transcript.txt` beside the input. These outputs
+are ignored. The existing Python scripts replace outputs with the same names, so
+preserve any manually corrected transcripts before rerunning them.
+
+The default model is English-only, CPU/int8. Full transcription accepts a different
+faster-whisper model name as its second argument. Model downloads require internet
+access and may take time. After download, speech processing runs locally.
+
+## Development
+
+`npm run check` runs strict TypeScript checking, tests, and tracked-file/link hygiene.
+The React source uses Remotion's bundler resolution; Node scripts use native ESM with
+explicit `.mjs` imports. This is a source template, not a published npm package.
+
+See [the root README](../README.md) and [optional delivery](../docs/ghl-delivery.md).

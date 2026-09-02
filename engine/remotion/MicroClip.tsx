@@ -31,7 +31,7 @@ const DEFAULT_THEME: BrandTheme = {
   sage: "#8a8a94",
 };
 
-export interface MicroClipProps {
+export type MicroClipProps = {
   theme?: Partial<BrandTheme>;
   logo?: string;
   hook?: string; // short eyebrow/hook at the top
@@ -41,7 +41,7 @@ export interface MicroClipProps {
   wordsPerPage?: number;
   width?: number;
   height?: number;
-}
+};
 
 const FPS = 30;
 
