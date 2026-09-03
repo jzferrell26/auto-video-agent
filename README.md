@@ -25,7 +25,7 @@ The first render downloads a browser runtime and fonts, so internet access is re
 Use **Use this template > Create a new repository** if you want your own student copy.
 Replace the links and CODEOWNERS identity in that copy.
 
-[Features](#features) · [Install](#install) · [Usage](#usage) · [Configuration](#configuration) · [Contributing](#contributing) · [License](#license)
+[Features](#features) · [Install](#install) · [Usage](#usage) · [Configuration](#configuration) · [AI assistants](#use-with-ai-assistants) · [Contributing](#contributing) · [License](#license)
 
 ## Features
 
@@ -101,6 +101,42 @@ environment or ignored `.env`. Both default to unset. No credentials are needed 
 
 See [the engine reference](engine/README.md) for compositions, commands and data formats,
 and [safe student workflows](docs/student-workflow.md) for privacy and review checkpoints.
+
+## Use with AI assistants
+
+Open the repository root (the folder containing `package.json`) in your coding assistant.
+The project includes shared setup, privacy and verification instructions:
+
+| Assistant | Project entry point |
+|---|---|
+| Codex | [AGENTS.md](AGENTS.md) |
+| Claude Code | [CLAUDE.md](CLAUDE.md), which imports AGENTS.md |
+| Cursor Agent | [project-guide.mdc](.cursor/rules/project-guide.mdc), which points to AGENTS.md |
+
+No custom plugins, global rules or personal agent configuration are required. You still
+need your chosen assistant installed and its normal account/access. Keep its permission
+controls enabled. Project instructions do not prevent every unsafe action.
+
+Start a fresh session after updating the instruction files. Before giving the assistant
+private media, try this with the public demo:
+
+```text
+Read AGENTS.md and README.md. Name the project instruction files you loaded,
+the verification commands, and the actions that require my approval.
+Then check prerequisites, install the locked npm dependencies if needed,
+run npm run check and npm run demo, and tell me the output path.
+Use only the included synthetic examples. Do not upload or publish anything.
+```
+
+If the assistant does not load the guide, explicitly attach `AGENTS.md` and ask it to
+read it before continuing. In Claude Code, `/context` shows which instruction files
+loaded under Memory files; in Cursor, check the active project rules. Plain chat/API
+clients without repository access need you to supply the instructions yourself.
+
+Discovery references: [Codex instructions](https://developers.openai.com/codex/guides/agents-md),
+[Claude Code memory](https://code.claude.com/docs/en/memory), and
+[Cursor rules](https://cursor.com/docs/rules). These files use the documented formats;
+check loading in your installed client rather than assuming identical behavior everywhere.
 
 ## Contributing
 
