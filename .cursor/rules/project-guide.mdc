@@ -1,0 +1,11 @@
+---
+description: Shared project instructions for working in auto-video-agent.
+alwaysApply: true
+---
+
+Read and follow the repository-root AGENTS.md before project work. If it is already
+loaded, use that content. It owns the shared commands, privacy rules, approval gates
+and completion checks; follow its task-specific documentation pointers as needed.
+Keep shared instructions there instead of duplicating them in Cursor rules.
+
+@AGENTS.md

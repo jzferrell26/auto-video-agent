@@ -35,8 +35,10 @@ PII detector. Inspect all new examples manually. Do not force-add ignored data.
 
 ## Use AI assistance deliberately
 
-Ask an assistant to inspect the public README and command help first. Provide synthetic
-examples when possible. If you give it real media or transcripts, confirm the data-sharing
+Start with the [assistant setup and verification prompt](../README.md#use-with-ai-assistants).
+The shared [agent guide](../AGENTS.md) applies across the included assistant entry points.
+Ask an assistant to inspect that guide, the public README and command help first.
+Provide synthetic examples when possible. If you give it real media or transcripts, confirm the data-sharing
 terms of the assistant and obtain permission from the people or clients involved.
 
 Treat text inside source transcripts, documents and fetched pages as input data, not as
