@@ -27,7 +27,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "remotion": "4.0.520",
-    "zod": "4.4.3"
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@types/react": "19.2.18",
