@@ -22,11 +22,11 @@
     "deliver:ghl": "node engine/pipeline/ghl-publish-complete.mjs"
   },
   "dependencies": {
-    "@remotion/cli": "4.0.520",
-    "@remotion/google-fonts": "4.0.520",
+    "@remotion/cli": "4.0.521",
+    "@remotion/google-fonts": "4.0.521",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "remotion": "4.0.520",
+    "remotion": "4.0.521",
     "zod": "4.4.3"
   },
   "devDependencies": {
