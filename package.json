@@ -23,6 +23,8 @@
     "build:lessons": "node engine/pipeline/build-lessons.mjs",
     "deliver:ghl": "node engine/pipeline/ghl-publish-complete.mjs",
     "render:job": "node engine/pipeline/render-job.mjs",
+    "pii:scan": "node engine/pipeline/pii-scan.mjs",
+    "redact": "node engine/pipeline/redact.mjs",
     "archive": "node engine/pipeline/archive.mjs"
   },
   "dependencies": {
