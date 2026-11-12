@@ -6,7 +6,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { COMPOSITION_IDS } from "../engine/compositions.mjs";
-import { isStill, parseArgs, planDelivery, sourceProp } from "../engine/pipeline/render-job.mjs";
+import { isStill, parseArgs, planDelivery, renderJob, sourceProp } from "../engine/pipeline/render-job.mjs";
 
 const KNOWN = ["composition", "props", "source", "out", "tag"];
 
@@ -115,4 +115,8 @@ test("a file:// --out is a local copy and needs no --publish", () => {
 test("--out must be a URI, and plain http is refused", () => {
   assert.throws(() => planDelivery({ out: "some/folder" }), /destination URI/);
   assert.throws(() => planDelivery({ out: "http://example.com/x" }), /https/);
+});
+
+test("props must be a reviewed local file, never fetched from a URI", () => {
+  assert.throws(() => renderJob(["--composition", "LessonVideo", "--props", "https://cdn.example.com/p.json"]), /not a URI/);
 });

@@ -27,6 +27,20 @@ import { assertInsideRoot } from "./runtime.mjs";
  * @typedef {BucketRef | HttpsRef | FileRef | DriveRef} StorageRef
  */
 
+/** A URI that is safe to print: no userinfo, query string or fragment (pre-signed signatures live there). */
+export function printableUri(uri) {
+  try {
+    const u = new URL(String(uri));
+    u.username = "";
+    u.password = "";
+    u.search = "";
+    u.hash = "";
+    return u.toString();
+  } catch {
+    return String(uri).replace(/[?#].*$/, "");
+  }
+}
+
 const SCHEMES = ["s3", "r2", "https", "file", "drive"];
 
 /**
@@ -50,7 +64,7 @@ export function parseUri(uri) {
   const match = /^([a-zA-Z][a-zA-Z0-9+.-]*):\/\/(.*)$/.exec(trimmed);
   if (!match) {
     throw new Error(
-      `not a storage URI: ${JSON.stringify(trimmed)}; expected one of ${SCHEMES.map((s) => `${s}://`).join(", ")}`
+      `not a storage URI: ${JSON.stringify(printableUri(trimmed))}; expected one of ${SCHEMES.map((s) => `${s}://`).join(", ")}`
     );
   }
   const scheme = match[1].toLowerCase();
@@ -74,7 +88,7 @@ export function parseUri(uri) {
     // file:///abs/path; the empty authority leaves a leading slash, which is the path.
     const path = decodeURIComponent(rest);
     if (!path.startsWith("/")) {
-      throw new Error(`file:// URI must be absolute (three slashes): ${JSON.stringify(uri)}`);
+      throw new Error(`file:// URI must be absolute (three slashes): ${JSON.stringify(printableUri(uri))}`);
     }
     // file:///C:/dir/file is the Windows form: there the leading slash belongs to the URI,
     // not the path; kept, copyFileSync resolves "/C:/dir" against the current drive and
@@ -99,7 +113,7 @@ export function parseUri(uri) {
   // s3:// and r2://; bucket is the authority, everything after it is the key.
   const slash = rest.indexOf("/");
   if (slash <= 0) {
-    throw new Error(`${scheme}:// URI needs a bucket AND a key: ${JSON.stringify(uri)} (want ${scheme}://bucket/key)`);
+    throw new Error(`${scheme}:// URI needs a bucket AND a key: ${JSON.stringify(printableUri(uri))} (want ${scheme}://bucket/key)`);
   }
   const bucket = rest.slice(0, slash);
   const key = safeKey(rest.slice(slash + 1), uri);
@@ -115,13 +129,13 @@ export function parseUri(uri) {
  * @returns {string}
  */
 function safeKey(key, uri) {
-  if (key === "") throw new Error(`storage URI has no path: ${JSON.stringify(uri)}`);
+  if (key === "") throw new Error(`storage URI has no path: ${JSON.stringify(printableUri(uri))}`);
   const segments = key.split("/");
   if (segments.some((s) => s === "." || s === "..")) {
-    throw new Error(`storage URI path may not contain . or .. segments: ${JSON.stringify(uri)}`);
+    throw new Error(`storage URI path may not contain . or .. segments: ${JSON.stringify(printableUri(uri))}`);
   }
   if (segments[segments.length - 1] === "") {
-    throw new Error(`storage URI points at a directory, not a file: ${JSON.stringify(uri)}`);
+    throw new Error(`storage URI points at a directory, not a file: ${JSON.stringify(printableUri(uri))}`);
   }
   return key;
 }
@@ -231,6 +245,10 @@ export function fetchCommand(ref, dest, env = process.env) {
           "--silent",
           "--show-error",
           "--location", // pre-signed URLs and Drive share links both redirect
+          "--proto", "=https", // https only, and a redirect may not downgrade or switch protocol
+          "--proto-redir", "=https",
+          "--max-redirs", "5",
+          "--globoff", // braces and brackets in a URL are literal, never several downloads
           "--retry", "4",
           "--retry-delay", "2",
           "--retry-connrefused",

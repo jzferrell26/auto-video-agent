@@ -17,6 +17,7 @@
 // it once without saving it to package.json:   npm install --no-save tesseract.js
 // tesseract.js runs in-process (WASM) but may download its language data on first use. Without
 // it, a frame scan stops with exit 2 and an install hint; it never reports a false "clean".
+// Skipping OCR on a video or image (--skip-ocr) also exits 2: on-screen text was not checked.
 // The transcript and text scans need neither OCR nor network. ffmpeg must be on PATH for frames.
 // Matches are REDACTED in the report so the report is not itself a PII store.
 //
@@ -77,15 +78,15 @@ function scanText(text, source, at) {
 
 function loadTranscript(p) {
   const raw = readFileSync(p, "utf-8");
-  if (p.endsWith(".json")) {
-    try {
-      const j = JSON.parse(raw);
-      // words.json / segments.json shapes: [{word|text}] or {segments:[{text}]}
-      const arr = Array.isArray(j) ? j : (j.segments || j.words || []);
-      return arr.map((x) => x.word || x.text || "").join(" ");
-    } catch { return raw; }
-  }
-  return raw;
+  if (!/\.json$/i.test(p)) return raw;
+  try {
+    const j = JSON.parse(raw);
+    // words.json / segments.json shapes: [{word|text}] or {segments:[{text}]}
+    const arr = Array.isArray(j) ? j : (j.segments || j.words || []);
+    const joined = arr.map((x) => (typeof x === "string" ? x : x?.word || x?.text || "")).join(" ");
+    // Also scan the raw JSON so an unexpected shape can never come back empty and clean.
+    return `${joined}\n${raw}`;
+  } catch { return raw; }
 }
 
 function have(bin) {
@@ -186,7 +187,9 @@ export async function scanForPII({ videoPath, transcriptPath, texts = [], imageP
   // Nothing inspected at all is a fail-open; report it as unverifiable rather than clean.
   if (!scanned) return fail("no scannable input was inspected (empty text and no video / transcript / images)", findings, notes);
 
-  return { clean: findings.length === 0, verified: !skipOcr, findings, notes };
+  // Verified only when no requested on-screen check was skipped.
+  const ocrSkipped = skipOcr && (Boolean(videoPath) || imagePaths.length > 0);
+  return { clean: findings.length === 0, verified: !ocrSkipped, findings, notes };
 }
 
 /** Safe message from an unknown thrown value. */
@@ -233,15 +236,21 @@ async function piiCommand(argv) {
     // The report holds redacted matches only. It is written once and never overwrites.
     if (args.out) writeFileSync(assertInsideRoot(args.out, "--out"), JSON.stringify(report, null, 2), { flag: "wx" });
     const byType = report.findings.reduce((a, f) => ((a[f.type] = (a[f.type] || 0) + 1), a), {});
-    console.log(report.cannotVerify ? `CANNOT VERIFY: ${report.cannotVerify}` : (report.clean ? "PII gate: CLEAN" : "PII gate: FOUND PII"));
+    const unverified = !report.cannotVerify && report.verified === false;
+    console.log(
+      report.cannotVerify ? `CANNOT VERIFY: ${report.cannotVerify}`
+        : !report.clean ? "PII gate: FOUND PII"
+        : unverified ? "PII gate: NOT VERIFIED (OCR skipped, on-screen PII was not checked)"
+        : "PII gate: CLEAN"
+    );
     for (const n of report.notes) console.log(`  note: ${n}`);
     if (report.findings.length) {
       console.log(`  findings (${report.findings.length}): ${JSON.stringify(byType)}`);
       for (const f of report.findings.slice(0, 20)) console.log(`   [${f.source}${f.at ? " " + f.at : ""}] ${f.type}: ${f.match}`);
       if (report.findings.length > 20) console.log(`   ... and ${report.findings.length - 20} more`);
     }
-    // Fail closed: 0 clean, 1 found PII, 2 cannot verify.
-    process.exitCode = report.cannotVerify ? 2 : (report.clean ? 0 : 1);
+    // Fail closed: 0 clean and verified, 1 found PII, 2 cannot verify or not verified.
+    process.exitCode = report.cannotVerify ? 2 : (!report.clean ? 1 : (unverified ? 2 : 0));
   } catch (e) {
     console.error(errText(e) || "PII scan failed.");
     process.exitCode = 2;

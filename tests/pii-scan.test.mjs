@@ -48,10 +48,17 @@ test("empty text entries do not count as scanned", async () => {
   assert.ok(r.cannotVerify, "all-empty texts must report cannotVerify");
 });
 
-test("skipping OCR never reports the result as verified", async () => {
-  const r = await scanForPII({ texts: [{ label: "t", text: "plain words" }], skipOcr: true });
+test("skipping OCR for a video never reports the result as verified", async () => {
+  // ffmpeg is never reached: OCR is skipped, so only the text is read.
+  const r = await scanForPII({ videoPath: "never-read.mp4", texts: [{ label: "t", text: "plain words" }], skipOcr: true });
   assert.equal(r.clean, true);
   assert.equal(r.verified, false);
+});
+
+test("skipping OCR when only text was given still counts as verified", async () => {
+  const r = await scanForPII({ texts: [{ label: "t", text: "plain words" }], skipOcr: true });
+  assert.equal(r.clean, true);
+  assert.equal(r.verified, true);
 });
 
 test("frame OCR without the optional engine fails closed with an install hint", async () => {
@@ -72,4 +79,19 @@ test("argument parsing refuses unknown flags and missing values", () => {
   assert.deepEqual(parsePiiArgs(["--video", "out/a.mp4", "--skip-ocr"]), { video: "out/a.mp4", skipOcr: true });
   assert.throws(() => parsePiiArgs(["--vidoe", "a.mp4"]), /Unknown argument/);
   assert.throws(() => parsePiiArgs(["--video"]), /needs a value/);
+});
+
+test("a JSON transcript in an unexpected shape is still scanned", async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { tmpdir } = await import("node:os");
+  const dir = mkdtempSync(join(tmpdir(), "pii-shape-"));
+  try {
+    const path = join(dir, "odd.json");
+    writeFileSync(path, JSON.stringify({ text: "reach me at test@example.com" }));
+    const r = await scanForPII({ transcriptPath: path });
+    assert.equal(r.clean, false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

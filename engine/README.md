@@ -185,7 +185,8 @@ and street addresses in a transcript and in sampled video frames, and fails clos
 it finds something, exit 2 if it could not verify. Reading on-screen text needs the optional
 OCR engine, which is not a dependency of this repository: `npm install --no-save tesseract.js`.
 It may download language data on first use. Without it, a frame scan stops with exit 2 rather
-than reporting a false "clean". It cannot detect people's names, so skim the footage yourself.
+than reporting a false "clean", and `--skip-ocr` on a video also exits 2 ("not verified").
+It cannot detect people's names, so skim the footage yourself.
 `redact` blurs rectangles you list (`{ "label", "x", "y", "width", "height", "mode" }` in
 source pixels) in one pass and can verify its own output with `--scan`.
 

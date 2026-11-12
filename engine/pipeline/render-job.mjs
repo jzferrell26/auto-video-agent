@@ -23,7 +23,7 @@ import { writeFileSync } from "node:fs";
 import { COMPOSITIONS, COMPOSITION_IDS } from "../compositions.mjs";
 import { REMOTION_ENTRY } from "./paths.mjs";
 import { assertInsideRoot, assertNew, main, outputDirectory, readJson, render, slugSchema } from "./runtime.mjs";
-import { fetchToFile, isRemoteUri, joinUri, localName, publishFile } from "./storage.mjs";
+import { fetchToFile, isRemoteUri, joinUri, localName, printableUri, publishFile } from "./storage.mjs";
 import { assertValidProps } from "./validate-props.mjs";
 import { z } from "zod";
 
@@ -115,11 +115,13 @@ export function planDelivery({ out, publish }) {
   return { mode: "upload", target: out };
 }
 
-function loadProps(propsRef, scratchDir, tag) {
-  const path = URI_SHAPE.test(propsRef)
-    ? fetchToFile(propsRef, join(scratchDir, tag + ".input.json"))
-    : assertInsideRoot(propsRef, "--props");
-  return readJson(path, z.record(z.string(), z.unknown()));
+// Props are trusted input (they choose which media the browser reads), so they must be a
+// reviewed file inside this repository, never fetched from a URI.
+function loadProps(propsRef) {
+  if (URI_SHAPE.test(propsRef)) {
+    throw new Error("--props must be a path to a props JSON inside this repository, not a URI. Download and review it first.");
+  }
+  return readJson(assertInsideRoot(propsRef, "--props"), z.record(z.string(), z.unknown()));
 }
 
 export function renderJob(argv) {
@@ -144,7 +146,7 @@ export function renderJob(argv) {
   const propsPath = join(propsDir, tag + ".json");
   assertNew([outPath, propsPath]);
 
-  const props = loadProps(args.props, propsDir, tag);
+  const props = loadProps(args.props);
 
   // Pull the source into public/, where Remotion resolves relative media paths, and point the
   // composition at it. This overrides what the props file said: the props were written before
@@ -154,7 +156,7 @@ export function renderJob(argv) {
     if (!prop) throw new Error(composition + " takes no media source; drop --source (it renders from props alone)");
     const name = localName(args.source);
     if (!SAFE_NAME.test(name)) throw new Error("The source file name " + JSON.stringify(name) + " is not portable; rename it to letters, digits, dot, dash or underscore.");
-    console.log("fetching " + args.source + " -> public/" + name);
+    console.log("fetching " + printableUri(args.source) + " -> public/" + name);
     fetchToFile(args.source, join(publicDir, name));
     props[prop] = name;
   }
@@ -171,7 +173,7 @@ export function renderJob(argv) {
     return;
   }
   const target = joinUri(delivery.target, outName);
-  console.log((delivery.mode === "upload" ? "publishing (approved with --publish) -> " : "copying -> ") + target);
+  console.log((delivery.mode === "upload" ? "publishing (approved with --publish) -> " : "copying -> ") + printableUri(target));
   publishFile(outPath, target, { publish: delivery.mode === "upload" });
   console.log(target);
 }

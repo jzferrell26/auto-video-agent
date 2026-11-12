@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { fetchCommand, fetchToFile, isRemoteUri, joinUri, localName, parseUri, publishCommand, publishFile, transferEnv } from "../engine/pipeline/storage.mjs";
+import { fetchCommand, fetchToFile, isRemoteUri, joinUri, localName, parseUri, printableUri, publishCommand, publishFile, transferEnv } from "../engine/pipeline/storage.mjs";
 import { ROOT, outputDirectory } from "../engine/pipeline/runtime.mjs";
 
 const R2_ENV = { R2_ACCOUNT_ID: "acct123" };
@@ -304,4 +304,16 @@ test("fetching a file:// source stays inside the repository and refuses to repla
   assert.throws(() => fetchToFile(pathToFileURL(src).href, dest), /already exists/);
   assert.throws(() => fetchToFile(pathToFileURL(join(ROOT, "..", "elsewhere.mp4")).href, join(t.dir, "x.mp4")), /must be inside the repository/);
   t.done();
+});
+
+test("https downloads stay on https through redirects and never glob", () => {
+  const cmd = fetchCommand(parseUri("https://cdn.example.com/a/b.mp4"), "/tmp/b.mp4");
+  for (const flag of ["--proto", "--proto-redir", "--globoff"]) assert.ok(cmd.args.includes(flag), flag);
+  assert.equal(cmd.args[cmd.args.indexOf("--proto-redir") + 1], "=https");
+});
+
+test("printable URIs drop signatures and credentials", () => {
+  const signature = "X-Amz-" + "Signature=secretvalue";
+  assert.equal(printableUri("https://user:pw@cdn.example.com/a/b.mp4?" + signature + "#x"), "https://cdn.example.com/a/b.mp4");
+  assert.throws(() => parseUri("https://cdn.example.com/dir/?" + signature), (err) => !String(err.message).includes("secretvalue"));
 });
