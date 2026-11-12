@@ -1,6 +1,6 @@
 # Engine reference
 
-The root project registers all five components in `src/Root.tsx`. No separate host
+The root project registers all six components in `src/Root.tsx`. No separate host
 project or private repository is required.
 
 ## Commands
@@ -25,16 +25,131 @@ may leave partial files; inspect them before deliberately removing or retrying.
 
 ## Compositions
 
-| ID | Output | Main inputs |
+<!-- BEGIN GENERATED: compositions (engine/pipeline/gen-docs.mjs) -->
+<!-- Do not edit by hand. Source: engine/compositions.mjs. Regenerate with npm run docs. -->
+
+| ID | Renders | Output |
 |---|---|---|
-| `BrandedShort` | Animated text short | `scenes`, optional theme/logo/width/height |
-| `CourseCover` | Still cover | `title`, optional eyebrow/subtitle/theme/logo |
-| `LessonVideo` | Intro, footage, captions, outro | Module/lesson titles, videoSrc, clipSeconds, captions |
-| `MicroClip` | Vertical framed footage | videoSrc, clipSeconds, captions, optional hook |
-| `CaptionedShort` | Caption-first voiceover | audio, captions, optional eyebrow |
+| `BrandedShort` | Video | Animated text short from a brief (9:16, 1:1 or 16:9) |
+| `CourseCover` | Still image | Still course cover image |
+| `LessonVideo` | Video | Lesson: intro card, footage with burned-in captions, outro card |
+| `MicroClip` | Video | Vertical clip: footage in a framed 9:16 layout with large captions |
+| `CaptionedShort` | Video | Caption-first short: your voiceover audio with burned-in word captions |
+| `SplicedShort` | Video | 9:16 short spliced from several takes: reframe, punch-ins, captions, cutaway scenes |
+
+<details>
+<summary>Full prop reference (validated before every render)</summary>
+
+#### `BrandedShort`
+
+Animated text short from a brief (9:16, 1:1 or 16:9)
+
+| Prop | Type | Required | Constraint |
+|---|---|---|---|
+| `theme` | { cream, slate, teal, gold, sage } | no | none |
+| `logo` | string | no | none |
+| `scenes` | { type, seconds }[] | yes | >= 1 item(s) |
+| `width` | integer | no | >= 16 |
+| `height` | integer | no | >= 16 |
+
+#### `CourseCover`
+
+Still course cover image
+
+| Prop | Type | Required | Constraint |
+|---|---|---|---|
+| `theme` | { cream, slate, teal, gold, sage } | no | none |
+| `logo` | string | no | none |
+| `eyebrow` | string | no | none |
+| `title` | string | yes | none |
+| `subtitle` | string | no | none |
+
+#### `LessonVideo`
+
+Lesson: intro card, footage with burned-in captions, outro card
+
+| Prop | Type | Required | Constraint |
+|---|---|---|---|
+| `theme` | { cream, slate, teal, gold, sage } | no | none |
+| `logo` | string | no | none |
+| `moduleTitle` | string | yes | none |
+| `lessonNumber` | integer | yes | >= 1 |
+| `lessonTitle` | string | yes | none |
+| `videoSrc` | string | yes | none |
+| `captions` | { word, startMs, endMs }[] | yes | none |
+| `clipSeconds` | number | yes | > 0 |
+| `introSeconds` | number | no | >= 0 |
+| `outroSeconds` | number | no | >= 0 |
+| `outroEyebrow` | string | no | none |
+| `outroTitle` | string | no | none |
+| `wordsPerPage` | integer | no | >= 1 |
+| `width` | integer | no | >= 16 |
+| `height` | integer | no | >= 16 |
+
+#### `MicroClip`
+
+Vertical clip: footage in a framed 9:16 layout with large captions
+
+| Prop | Type | Required | Constraint |
+|---|---|---|---|
+| `theme` | { cream, slate, teal, gold, sage } | no | none |
+| `logo` | string | no | none |
+| `hook` | string | no | none |
+| `videoSrc` | string | yes | none |
+| `captions` | { word, startMs, endMs }[] | yes | none |
+| `clipSeconds` | number | yes | > 0 |
+| `wordsPerPage` | integer | no | >= 1 |
+| `width` | integer | no | >= 16 |
+| `height` | integer | no | >= 16 |
+
+#### `CaptionedShort`
+
+Caption-first short: your voiceover audio with burned-in word captions
+
+| Prop | Type | Required | Constraint |
+|---|---|---|---|
+| `theme` | { cream, slate, teal, gold, sage } | no | none |
+| `logo` | string | no | none |
+| `eyebrow` | string | no | none |
+| `audio` | string | yes | none |
+| `captions` | { word, startMs, endMs }[] | yes | none |
+| `wordsPerPage` | integer | no | >= 1 |
+| `width` | integer | no | >= 16 |
+| `height` | integer | no | >= 16 |
+
+#### `SplicedShort`
+
+9:16 short spliced from several takes: reframe, punch-ins, captions, cutaway scenes
+
+| Prop | Type | Required | Constraint |
+|---|---|---|---|
+| `theme` | { background, surface, foreground, accent, muted, success, fontFamily, displayFontFamily } | no | none |
+| `segments` | { src, fromFrame, toFrame, centerX, zoom, volume }[] | yes | >= 1 item(s) |
+| `sourceWidth` | integer | no | >= 16 |
+| `sourceHeight` | integer | no | >= 16 |
+| `baseZoom` | number | no | > 0 |
+| `baseOriginY` | number | no | >= 0, <= 1 |
+| `drift` | number | no | >= 0, <= 0.5 |
+| `punchIns` | { atMs, durMs, scale, ramp, anchorX, anchorY, whoosh }[] | no | none |
+| `captions` | { word, startMs, endMs, emphasis }[] | no | none |
+| `captionY` | number | no | >= 0 |
+| `wordsPerPage` | integer | no | >= 1 |
+| `cutaways` | { type, atMs, durMs, whoosh, captionY, hideCaptions }[] | no | none |
+| `kickers` | { atMs, durMs, text, y, rotate }[] | no | none |
+| `nameTag` | { name, title, atMs, durMs } | no | none |
+| `sfx` | { src, atMs, volume }[] | no | none |
+| `whooshSrc` | string | no | none |
+| `whooshVolume` | number | no | >= 0, <= 1 |
+| `tailMs` | number | no | >= 0, <= 60000 |
+| `safeArea` | { top, bottom } | no | none |
+| `width` | integer | no | >= 16 |
+| `height` | integer | no | >= 16 |
+
+</details>
+<!-- END GENERATED: compositions -->
 
 BrandedShort and CourseCover work without media. Run `npm run demo:media` once
-before opening the other three default examples in Studio. Those defaults use the
+before opening the other four default examples in Studio. Those defaults use the
 synthetic files under `public/demo/`.
 
 ```bash
