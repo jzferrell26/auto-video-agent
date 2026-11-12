@@ -1,11 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, resolve, join, relative } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { dirname, isAbsolute, resolve, join, relative } from "node:path";
+import { pathToFileURL } from "node:url";
 import { z } from "zod";
+import { REPO_ROOT } from "./paths.mjs";
 
-export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+// The root comes from paths.mjs (walk up to package.json), so there is one source for it.
+export const ROOT = REPO_ROOT;
 const requireFromRoot = createRequire(join(ROOT, "package.json"));
 export const slugSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/, "Use 1-64 letters, digits, hyphens or underscores.");
 const themeSchema = z.object({
@@ -58,6 +60,26 @@ export function outputDirectory(subpath) {
     mkdirSync(current, { recursive: true });
   }
   return path;
+}
+
+/**
+ * Resolve a path against the repository root and refuse anything that lands outside it,
+ * including through a symlink. Use it for every user-supplied path a command reads or writes.
+ *
+ * @param {string} path relative to the root, or absolute
+ * @param {string} [label] used in the error message
+ * @returns {string} the absolute path
+ */
+export function assertInsideRoot(path, label = "Path") {
+  const absolute = resolve(ROOT, path);
+  const rel = relative(ROOT, absolute);
+  if (!rel || rel.startsWith("..") || isAbsolute(rel)) throw new Error(label + " must be inside the repository.");
+  // Resolve links on the nearest existing ancestor so a symlinked folder cannot lead out.
+  let probe = absolute;
+  while (!existsSync(probe)) probe = dirname(probe);
+  const realRel = relative(realpathSync(ROOT), realpathSync(probe));
+  if (realRel.startsWith("..") || isAbsolute(realRel)) throw new Error(label + " must be inside the repository.");
+  return absolute;
 }
 
 export function assertNew(paths) {

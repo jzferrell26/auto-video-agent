@@ -19,7 +19,8 @@
     "check": "npm run typecheck && npm test && npm run check:hygiene",
     "render:platforms": "node engine/pipeline/render-platforms.mjs",
     "build:lessons": "node engine/pipeline/build-lessons.mjs",
-    "deliver:ghl": "node engine/pipeline/ghl-publish-complete.mjs"
+    "deliver:ghl": "node engine/pipeline/ghl-publish-complete.mjs",
+    "archive": "node engine/pipeline/archive.mjs"
   },
   "dependencies": {
     "@remotion/cli": "4.0.541",
