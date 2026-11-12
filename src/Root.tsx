@@ -4,6 +4,7 @@ import { CaptionedShort, calculateCaptionedMetadata } from "../engine/remotion/C
 import { CourseCover } from "../engine/remotion/CourseCover";
 import { LessonVideo, calculateLessonMetadata } from "../engine/remotion/LessonVideo";
 import { MicroClip, calculateMicroMetadata } from "../engine/remotion/MicroClip";
+import { SplicedShort, calculateSplicedShortMetadata, type SplicedShortProps } from "../engine/remotion/SplicedShort";
 
 const short: BrandedShortProps = {
   width: 1920,
@@ -21,6 +22,25 @@ const captions = [
   { word: "captions", startMs: 2000, endMs: 3000 },
 ];
 
+// Synthetic splice: two 3-second ranges of the demo clip, one cutaway of each kind that
+// needs no media. No whoosh file is set, so this default preview is silent apart from the tone.
+const spliced: SplicedShortProps = {
+  segments: [
+    { src: "demo/source.mp4", fromFrame: 0, toFrame: 90, centerX: 0.5 },
+    { src: "demo/source.mp4", fromFrame: 90, toFrame: 180, centerX: 0.5, zoom: 1.12 },
+  ],
+  sourceWidth: 1280,
+  sourceHeight: 720,
+  drift: 0.03,
+  punchIns: [{ atMs: 1200, durMs: 800, scale: 1.25, ramp: "ease", anchorY: 0.4 }],
+  captions,
+  cutaways: [
+    { type: "title", atMs: 3000, durMs: 1200, eyebrow: "SYNTHETIC DEMO", title: "Splice\nyour takes", subtitle: "Placeholder copy" },
+    { type: "stat", atMs: 4400, durMs: 1200, eyebrow: "EXAMPLE", value: "3x", label: "Faster", sublabel: "Invented number" },
+  ],
+  kickers: [{ atMs: 300, durMs: 900, text: "Sample" }],
+};
+
 export const Root = () => (
   <>
     <Composition id="BrandedShort" component={BrandedShort} fps={30} width={1920} height={1080}
@@ -36,5 +56,7 @@ export const Root = () => (
     <Composition id="CaptionedShort" component={CaptionedShort} fps={30} width={1080} height={1920}
       durationInFrames={114} calculateMetadata={calculateCaptionedMetadata}
       defaultProps={{ eyebrow: "SYNTHETIC DEMO", audio: "demo/audio.wav", captions }} />
+    <Composition id="SplicedShort" component={SplicedShort} fps={30} width={1080} height={1920}
+      durationInFrames={180} calculateMetadata={calculateSplicedShortMetadata} defaultProps={spliced} />
   </>
 );
