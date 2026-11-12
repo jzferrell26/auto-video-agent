@@ -36,7 +36,7 @@ const spliced: SplicedShortProps = {
   captions,
   cutaways: [
     { type: "title", atMs: 3000, durMs: 1200, eyebrow: "SYNTHETIC DEMO", title: "Splice\nyour takes", subtitle: "Placeholder copy" },
-    { type: "stat", atMs: 4400, durMs: 1200, eyebrow: "EXAMPLE", value: "3x", label: "Faster", sublabel: "Invented number" },
+    { type: "stat", atMs: 4400, durMs: 1200, eyebrow: "EXAMPLE", value: "42", label: "Example stat", sublabel: "Placeholder number" },
   ],
   kickers: [{ atMs: 300, durMs: 900, text: "Sample" }],
 };
