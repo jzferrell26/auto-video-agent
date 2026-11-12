@@ -22,18 +22,18 @@
     "deliver:ghl": "node engine/pipeline/ghl-publish-complete.mjs"
   },
   "dependencies": {
-    "@remotion/cli": "4.0.520",
-    "@remotion/google-fonts": "4.0.520",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "remotion": "4.0.520",
-    "zod": "4.4.3"
+    "@remotion/cli": "4.0.541",
+    "@remotion/google-fonts": "4.0.541",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.541",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.5",
-    "@vitest/coverage-v8": "4.1.11",
-    "typescript": "5.9.3",
-    "vitest": "4.1.11"
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitest/coverage-v8": "5.1.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
   }
 }
