@@ -25,6 +25,7 @@
     "render:job": "node engine/pipeline/render-job.mjs",
     "pii:scan": "node engine/pipeline/pii-scan.mjs",
     "redact": "node engine/pipeline/redact.mjs",
+    "master:audio": "node engine/pipeline/master-audio.mjs",
     "archive": "node engine/pipeline/archive.mjs"
   },
   "dependencies": {
