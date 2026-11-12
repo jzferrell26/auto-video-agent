@@ -26,7 +26,7 @@ version of Remotion. Remotion also publishes
 [pricing](https://www.remotion.dev/docs/license/pricing) pages.
 
 Terms change between versions. The 4.0.541 license says it will change slightly in
-Remotion 5.0, and Remotion's website describes terms and pricing that take effect with 5.0.
+Remotion 5.0, and Remotion's website describes terms that take effect with 5.0.
 Check the license file that ships with the version you install, and ask Remotion or your own
 counsel if you are not sure which group you are in. Schools, universities and employers can
 have their own rules, so check before using this template for class or client work.
