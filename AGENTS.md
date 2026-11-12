@@ -22,10 +22,14 @@ and keep those entry points thin. No personal agent setup or extra plugin is req
 Run commands from the repository root. Use Node.js 22+ and `npm ci` with the committed
 lockfile. [package.json](package.json) is authoritative for available npm scripts.
 
-- `npm run check`: TypeScript, tests and repository hygiene checks.
+- `npm run check`: TypeScript, generated-docs check, tests and repository hygiene checks.
+- `npm run docs`: regenerate the composition tables in `engine/README.md` from
+  `engine/compositions.mjs`, the registry that also validates props before a render.
 - `npm run demo`: silent text-only MP4 in a fresh `out/demo-<unique-id>/` directory.
 - `npm run studio`: local preview editor. Keep it local; do not expose it publicly.
 - `npm run build`: local bundle verification, not deployment.
+- `npm run render:job`, `master:audio`, `pii:scan`, `redact`, `archive`: finishing tools, see the
+  [engine reference](engine/README.md). A remote `--out` needs an explicit `--publish`.
 
 The first render downloads a browser runtime and fonts. FFmpeg/ffprobe are needed for
 lesson cutting and synthetic footage; Python is optional for local transcription.

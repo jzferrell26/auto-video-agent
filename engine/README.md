@@ -17,6 +17,12 @@ from the root, not from `engine/`.
 | `npm run render:platforms -- <brief.json> <slug>` | Three aspect-ratio renders |
 | `npm run build:lessons -- <video> <words.json> <map.json> <slug>` | Clipped, captioned lessons |
 | `npm run deliver:ghl -- <map.json> <slug>` | Local delivery preview, no network |
+| `npm run docs` / `npm run docs:check` | Regenerate / verify the composition tables below |
+| `npm run render:job -- --composition <id> --props <file>` | One validated render, result stays in `out/` |
+| `npm run master:audio -- --video <mp4> [--bed <audio>]` | Loudness master of a rendered video |
+| `npm run pii:scan -- --video <mp4>` | Fail-closed PII gate for a transcript or video |
+| `npm run redact -- --video <mp4> --regions <json>` | Blur named rectangles, optionally verified |
+| `npm run archive -- --project <name> <files>` | Move finished videos to a synced folder |
 | `npm run build` | Bundle for local build verification, not deployment |
 
 Slugs contain 1-64 letters, digits, hyphens or underscores and must begin with a letter
@@ -160,6 +166,59 @@ Direct Remotion commands are lower-level tools and can overwrite their explicit
 output path; choose a new filename. The overwrite protection described above belongs
 to this project's Node wrappers.
 
+## Finishing tools
+
+These work on files already inside the repository, never overwrite an output, and call
+external programs with argument arrays. FFmpeg and ffprobe must be on your PATH.
+
+**Audio master.** `master:audio` rebuilds only the audio of a rendered MP4 and copies the
+video. It trims the AAC start delay that Remotion renders carry (2048 samples) so the voice
+sits on the picture, optionally mixes a music bed (`--bed`, looped to length, about -28 LUFS,
+dipped around 1 kHz and 2.5 kHz, faded, and ducked under the voice), then runs a two-pass
+loudnorm to -14 LUFS integrated, -1.5 dBTP and LRA 11. It encodes AAC 256k, measures the
+result with ebur128, and applies a limiter and measures again only if the true peak is above
+-1.0 dBTP. It prints the final loudness and peak. It needs FFmpeg 7.1 or newer. You must have
+the right to use any bed you supply, and you should still listen to the result.
+
+**Privacy gate.** `pii:scan` looks for emails, phone numbers, SSNs, card numbers, IP addresses
+and street addresses in a transcript and in sampled video frames, and fails closed: exit 1 if
+it finds something, exit 2 if it could not verify. Reading on-screen text needs the optional
+OCR engine, which is not a dependency of this repository: `npm install --no-save tesseract.js`.
+It may download language data on first use. Without it, a frame scan stops with exit 2 rather
+than reporting a false "clean". It cannot detect people's names, so skim the footage yourself.
+`redact` blurs rectangles you list (`{ "label", "x", "y", "width", "height", "mode" }` in
+source pixels) in one pass and can verify its own output with `--scan`.
+
+**Archive.** `archive` copies finished videos into `VIDEO_ARCHIVE_DIR/<project>/` (set it in
+your ignored `.env` to a cloud-synced folder, for example a Google Drive for desktop folder),
+and removes the local file only after the copy matches by SHA-256. A sync client uploads in the
+background, so confirm the files arrived before clearing its cache.
+
+**Intermediate encoder.** `build:lessons` cuts each lesson with the first H.264 encoder that
+passes a trial encode on your machine (hardware if it works, otherwise libx264) at a
+near-lossless setting, because Remotion compresses the final file from that clip.
+
+## Advanced: render job and remote storage
+
+`render:job` renders one composition from a props file, checks the props against the
+registry first, and leaves the result in `out/`. Everything that moves files is opt-in:
+
+- `--source <uri>` downloads media into `public/` before rendering.
+- `--out file:///...` copies the result somewhere inside the repository.
+- `--out s3://`, `r2://` or `drive://` uploads to an external service. It is refused unless
+  you also pass `--publish`, after you have reviewed the file in `out/` and approve that exact
+  destination. These paths run the AWS CLI or rclone with your own credentials in the
+  environment; see the header of `engine/pipeline/storage.mjs`. Existing remote objects follow
+  that provider's overwrite behaviour, so use a new `--tag` for every version.
+
+## Splicing a short
+
+`SplicedShort` plays frame ranges of one or more takes end to end. Build the ranges with
+`buildSplicePlan` from `engine/pipeline/splice-plan.mjs`: it snaps your in and out points to
+the frame grid, keeps only the words that survive each cut, and retimes them into output time,
+so captions and cues cannot drift from the picture. `whooshSrc` and `sfx` are optional; without
+them the short is silent apart from the footage audio. `safeArea` is optional and has no preset.
+
 ## Input formats
 
 A caption array uses milliseconds:
@@ -212,7 +271,9 @@ access and may take time. After download, speech processing runs locally.
 
 ## Development
 
-`npm run check` runs strict TypeScript checking, tests, and tracked-file/link hygiene.
+`npm run check` runs strict TypeScript checking, the generated-docs check, tests, and
+tracked-file/link hygiene. Add a composition to `engine/compositions.mjs`, then run `npm run docs`
+instead of editing the generated tables by hand.
 The React source uses Remotion's bundler resolution; Node scripts use native ESM with
 explicit `.mjs` imports. This is a source template, not a published npm package.
 

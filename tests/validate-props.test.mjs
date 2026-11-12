@@ -17,7 +17,7 @@ test("accepts a valid LessonVideo props object", () => {
   assert.deepEqual(validateProps("LessonVideo", lesson()), []);
 });
 
-test("rejects NaN clipSeconds — the ffprobe failure mode", () => {
+test("rejects NaN clipSeconds : the ffprobe failure mode", () => {
   const errors = validateProps("LessonVideo", lesson({ clipSeconds: NaN }));
   assert.equal(errors.length, 1);
   assert.match(errors[0], /clipSeconds/);
@@ -169,7 +169,7 @@ test("SplicedShort rejects empty segments, bad cutaway timing and a stray prop",
   assert.match(validateProps("SplicedShort", { segments: [{ src: "t.mp4", fromFrame: 0, toFrame: 30 }], whoosh: "a.wav" })[0], /not a prop of SplicedShort/);
 });
 
-test("props of removed or private compositions are an unknown composition", () => {
+test("a name that is not a registered composition is reported as unknown", () => {
   assert.match(validateProps("TalkingHead", {})[0], /unknown composition/);
 });
 
