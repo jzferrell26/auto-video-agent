@@ -6,6 +6,9 @@ brand-props/
 public/
 tmp/
 
+# Clone module: consent records, private provider ids and look state
+clone-private/
+
 # Node
 node_modules/
 npm-debug.log*
