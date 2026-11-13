@@ -1,0 +1,30 @@
+{
+  "isExample": true,
+  "schema": "clone-consent/1",
+  "id": "consent-example-001",
+  "person": {
+    "name": "Avery Example",
+    "adultConfirmed": true
+  },
+  "authorizes": {
+    "voice": true,
+    "likeness": true
+  },
+  "scope": {
+    "uses": ["short-form"],
+    "excludedUses": ["paid ads", "political topics", "phone calls"]
+  },
+  "platforms": ["youtube-shorts", "tiktok", "instagram-reels"],
+  "aiDisclosure": {
+    "acknowledged": true,
+    "note": "Read the platform disclosure facts in docs/clone-video.md before agreeing."
+  },
+  "signedOn": "2026-01-15",
+  "expires": "until-revoked",
+  "revocation": {
+    "contact": "Tell the creator in writing; every unfinished step stops.",
+    "revokedOn": null
+  },
+  "recordedBy": "the creator",
+  "method": "signed-document"
+}

@@ -36,6 +36,8 @@ Replace the links and CODEOWNERS identity in that copy.
 - Customize colors, logos, titles and copy per job.
 - Generate synthetic practice footage without sharing client recordings.
 - Preview optional GoHighLevel delivery locally before explicitly authorizing uploads.
+- Optionally turn an approved script into a talking-head Short with your own consented
+  HeyGen voice clone and avatar look ([clone video guide](docs/clone-video.md)).
 
 This is a file-driven toolkit, not an autonomous video director. You choose the cuts,
 review captions and approve the results. It does not generate a script, select highlights,
@@ -90,6 +92,13 @@ This defaults to a local preview. It does not read delivery credentials, render,
 or import. Actual delivery is an advanced, opt-in workflow described in
 [the delivery guide](docs/ghl-delivery.md).
 
+### Optional: clone video
+
+With written consent from the person being cloned (yourself included), your own HeyGen
+account, voice clone and avatar look, `npm run clone` runs an audio-first route from an
+approved script to a 9:16 Short. Paid and uploading steps only preview until you add
+`--run`. Start with [the clone video guide](docs/clone-video.md).
+
 ## Configuration
 
 Your theme, logo and content belong in job JSON, not the engine. Copy examples into
@@ -97,7 +106,8 @@ Your theme, logo and content belong in job JSON, not the engine. Copy examples i
 Both directories, `public/`, and `out/` are ignored by Git.
 
 The optional delivery adapter reads `GHL_LOCATION_ID` and `GHL_PIT` from your
-environment or ignored `.env`. Both default to unset. No credentials are needed for local rendering.
+environment or ignored `.env`, and the optional clone module reads `HEYGEN_API_KEY`.
+All default to unset. No credentials are needed for local rendering.
 
 See [the engine reference](engine/README.md) for compositions, commands and data formats,
 and [safe student workflows](docs/student-workflow.md) for privacy and review checkpoints.

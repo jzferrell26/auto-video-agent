@@ -23,6 +23,7 @@ from the root, not from `engine/`.
 | `npm run pii:scan -- --video <mp4>` | Fail-closed PII gate for a transcript or video |
 | `npm run redact -- --video <mp4> --regions <json>` | Blur named rectangles, optionally verified |
 | `npm run archive -- --project <name> <files>` | Move finished videos to a synced folder |
+| `npm run clone -- <command> --consent <record> ...` | Optional HeyGen clone route; see [clone video](../docs/clone-video.md) |
 | `npm run build` | Bundle for local build verification, not deployment |
 
 Slugs contain 1-64 letters, digits, hyphens or underscores and must begin with a letter
@@ -280,4 +281,5 @@ instead of editing the generated tables by hand.
 The React source uses Remotion's bundler resolution; Node scripts use native ESM with
 explicit `.mjs` imports. This is a source template, not a published npm package.
 
-See [the root README](../README.md) and [optional delivery](../docs/ghl-delivery.md).
+See [the root README](../README.md), [optional delivery](../docs/ghl-delivery.md) and
+[optional clone video](../docs/clone-video.md).

@@ -1,0 +1,30 @@
+{
+  "schema": "clone-job/1",
+  "use": "short-form",
+  "platforms": ["youtube-shorts"],
+  "scriptApprovedOn": "2026-01-20",
+  "script": "Most houseplants die from too much water, not too little. Before you water, push one finger into the soil. If the top inch is still damp, wait a day and check again. Then give the pot a slow drink until water runs out of the bottom. That is the whole routine.",
+  "language": "en",
+  "emphasis": ["water", "finger", "damp", "routine"],
+  "kickers": [
+    { "atMs": 100, "durMs": 3000, "text": "Stop overwatering" },
+    { "atPhrase": "Then give the pot", "durMs": 2500, "text": "Water slowly" }
+  ],
+  "broll": [
+    {
+      "src": "clone/practice/soil-check.mp4",
+      "fromPhrase": "Before you water,",
+      "toPhrase": "into the soil.",
+      "sourceFrom": 0,
+      "sourceWidth": 1280,
+      "sourceHeight": 720,
+      "crop": { "x": 340, "y": 120, "width": 600, "height": 480 },
+      "eyebrow": "Check the soil first"
+    }
+  ],
+  "centerX": 0.5,
+  "zoom": 1,
+  "spliced": {
+    "wordsPerPage": 3
+  }
+}
