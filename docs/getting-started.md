@@ -64,6 +64,8 @@ accuracy or model downloads.
 |---|---|
 | npm cannot find package.json | Run from the repository root, not engine/ |
 | Browser/font download fails | Check network access and proxy settings; retry after resolving connectivity |
+| Render cannot launch a browser | Run `npx remotion browser ensure` to download the headless browser Remotion renders with; a regular Chrome install is not a substitute |
+| `npm run typecheck` cannot find or start TypeScript | TypeScript 7 runs a native binary installed as an optional dependency. Use a supported 64-bit OS, run `npm ci` on the machine where you work, and do not copy `node_modules` between computers or use `--omit=optional` |
 | FFmpeg not found | Install FFmpeg and reopen the terminal with the updated PATH |
 | Default video/audio missing | Run `npm run demo:media` before the three media-based previews |
 | Output already exists | Choose a fresh slug; inspect partial outputs before cleanup |
