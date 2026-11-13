@@ -150,3 +150,7 @@ Project source is licensed under the [MIT License](LICENSE).
 Remotion uses a separate source-available license, not MIT. FFmpeg, fonts, model weights,
 music and your own media have separate terms. Read [NOTICE.md](NOTICE.md) before
 commercial use or redistribution. The project license does not license your input media.
+
+Teaching a class or selling a course with this template? Schools, universities and course
+sellers should read [Remotion's license terms](https://www.remotion.dev/docs/license) first:
+whether you can use Remotion for free depends on who you are and how you use it.
