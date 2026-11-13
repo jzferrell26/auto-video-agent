@@ -15,6 +15,9 @@ and keep those entry points thin. No personal agent setup or extra plugin is req
    - Compositions, captions, cuts, input schemas or CLI commands: [engine reference](engine/README.md).
    - Real recordings, transcripts or final video review: [student workflow](docs/student-workflow.md).
    - Any GoHighLevel delivery work: [delivery guide](docs/ghl-delivery.md).
+   - Any HeyGen clone, voice or avatar work: [clone video guide](docs/clone-video.md).
+     Consent comes first. With `--run`, `speech`, `upload` and `lipsync` spend credits or
+     upload a person's voice; run them only after the user approves that exact piece.
    - Adding or redistributing assets/dependencies: [license notices](NOTICE.md).
 
 ## Commands and project boundaries
