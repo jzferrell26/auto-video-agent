@@ -175,7 +175,7 @@ export function renderJob(argv) {
   const target = joinUri(delivery.target, outName);
   console.log((delivery.mode === "upload" ? "publishing (approved with --publish) -> " : "copying -> ") + printableUri(target));
   publishFile(outPath, target, { publish: delivery.mode === "upload" });
-  console.log(target);
+  console.log(printableUri(target));
 }
 
 main(import.meta.url, renderJob);
