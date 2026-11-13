@@ -1,6 +1,7 @@
 // One trusted brief, three local outputs. Does not upload or publish.
 import { join } from "node:path";
 import { assertNew, main, outputDirectory, readJson, render, shortSchema, slugSchema, writeJson } from "./runtime.mjs";
+import { assertValidProps } from "./validate-props.mjs";
 
 export function renderPlatforms(args) {
   if (args.includes("--help")) {
@@ -21,6 +22,7 @@ export function renderPlatforms(args) {
     props: join(props, slug + "-" + target.name + ".json"),
   }));
   assertNew(jobs.flatMap((job) => [job.output, job.props]));
+  for (const job of jobs) assertValidProps("BrandedShort", { ...content, width: job.width, height: job.height });
   for (const job of jobs) {
     writeJson(job.props, { ...content, width: job.width, height: job.height });
     render(["render", "src/index.tsx", "BrandedShort", job.output, "--props=" + job.props, "--codec=h264"]);

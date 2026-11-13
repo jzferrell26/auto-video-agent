@@ -67,7 +67,7 @@ accuracy or model downloads.
 | Render cannot launch a browser | Run `npx remotion browser ensure` to download the headless browser Remotion renders with; a regular Chrome install is not a substitute |
 | `npm run typecheck` cannot find or start TypeScript | TypeScript 7 runs a native binary installed as an optional dependency. Use a supported 64-bit OS, run `npm ci` on the machine where you work, and do not copy `node_modules` between computers or use `--omit=optional` |
 | FFmpeg not found | Install FFmpeg and reopen the terminal with the updated PATH |
-| Default video/audio missing | Run `npm run demo:media` before the three media-based previews |
+| Default video/audio missing | Run `npm run demo:media` before the four media-based previews |
 | Output already exists | Choose a fresh slug; inspect partial outputs before cleanup |
 | Captions do not match | Review transcription timing and cuts against the actual recording |
 | GHL preview did not upload | Expected: default delivery is a local preview; see the explicit upload guide |

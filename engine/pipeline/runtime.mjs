@@ -1,11 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, resolve, join, relative } from "node:path";
+import { dirname, isAbsolute, resolve, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { z } from "zod";
+import { REPO_ROOT } from "./paths.mjs";
 
-export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+// The root comes from paths.mjs (walk up to package.json), so there is one source for it.
+export const ROOT = REPO_ROOT;
 const requireFromRoot = createRequire(join(ROOT, "package.json"));
 export const slugSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/, "Use 1-64 letters, digits, hyphens or underscores.");
 const themeSchema = z.object({
@@ -60,6 +62,26 @@ export function outputDirectory(subpath) {
   return path;
 }
 
+/**
+ * Resolve a path against the repository root and refuse anything that lands outside it,
+ * including through a symlink. Use it for every user-supplied path a command reads or writes.
+ *
+ * @param {string} path relative to the root, or absolute
+ * @param {string} [label] used in the error message
+ * @returns {string} the absolute path
+ */
+export function assertInsideRoot(path, label = "Path") {
+  const absolute = resolve(ROOT, path);
+  const rel = relative(ROOT, absolute);
+  if (!rel || rel.startsWith("..") || isAbsolute(rel)) throw new Error(label + " must be inside the repository.");
+  // Resolve links on the nearest existing ancestor so a symlinked folder cannot lead out.
+  let probe = absolute;
+  while (!existsSync(probe)) probe = dirname(probe);
+  const realRel = relative(realpathSync(ROOT), realpathSync(probe));
+  if (realRel.startsWith("..") || isAbsolute(realRel)) throw new Error(label + " must be inside the repository.");
+  return absolute;
+}
+
 export function assertNew(paths) {
   if (paths.some((path) => existsSync(path))) throw new Error("Output already exists. Choose a new slug or inspect the previous run.");
 }
@@ -86,8 +108,27 @@ export function rebaseWords(words, startSec, endSec) {
     .map((word) => ({ ...word, startMs: word.startMs - start, endMs: Math.min(word.endMs, end) - start }));
 }
 
+/** The "// Usage:" block at the top of a script, or null when the script has none. */
+export function usageText(moduleUrl) {
+  const lines = readFileSync(fileURLToPath(moduleUrl), "utf8").split(/\r?\n/);
+  const start = lines.findIndex((line) => /^\/\/ Usage:/.test(line));
+  if (start === -1) return null;
+  const body = [];
+  for (const line of lines.slice(start + 1)) {
+    if (!/^\/\/ {2,}\S/.test(line)) break;
+    body.push(line.replace(/^\/\/ {2}/, ""));
+  }
+  return body.length ? `Usage:\n${body.join("\n")}` : null;
+}
+
 export function main(moduleUrl, callback) {
   if (process.argv[1] && moduleUrl === pathToFileURL(resolve(process.argv[1])).href) {
+    // --help prints the script's own usage header; scripts without one handle --help themselves.
+    const usage = process.argv.slice(2).includes("--help") ? usageText(moduleUrl) : null;
+    if (usage) {
+      console.log(usage);
+      return;
+    }
     Promise.resolve().then(() => callback(process.argv.slice(2))).catch((error) => {
       if (error instanceof z.ZodError) {
         console.error("Invalid input: " + error.issues.map((issue) => issue.path.join(".") + ": " + issue.message).join("; "));

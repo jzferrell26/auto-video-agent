@@ -40,7 +40,7 @@ have their own rules, so check before using this template for class or client wo
 | TypeScript | Apache-2.0, including the platform binary packages it installs for your computer (@typescript/typescript-*); each ships its own LICENSE and NOTICE.txt |
 | FFmpeg | LGPL/GPL and optional nonfree build constraints; the FFmpeg that Remotion installs and any FFmpeg you install yourself each have their own build and license terms, so inspect the one you use |
 | faster-whisper | MIT for the project code; check each downloaded model's terms separately |
-| Cormorant Garamond and DM Sans | SIL Open Font License in the upstream font distributions |
+| Cormorant Garamond, DM Sans, Barlow and Barlow Condensed | SIL Open Font License in the upstream font distributions |
 | Node.js and Python | Runtime licenses and bundled third-party notices |
 | Development dependencies | Their installed LICENSE/NOTICE files and package metadata |
 

@@ -1,5 +1,7 @@
 // Local-only course builder. Relative paths are resolved from the repository root.
 import { resolve, join } from "node:path";
+import { intermediateVideoArgs } from "./encoder.mjs";
+import { assertValidProps } from "./validate-props.mjs";
 import { ROOT, assertNew, main, mapSchema, outputDirectory, readJson, rebaseWords, render, run, slugSchema, wordsSchema, writeJson } from "./runtime.mjs";
 
 export function buildLessons(args) {
@@ -22,20 +24,28 @@ export function buildLessons(args) {
   const output = outputDirectory("out/lessons");
   const jobs = map.lessons.map((lesson) => {
     const tag = slug + "-L" + String(lesson.number).padStart(2, "0");
-    return { lesson, tag, clip: join(clips, tag + ".mp4"), props: join(props, tag + ".json"), output: join(output, tag + ".mp4") };
+    const lessonProps = {
+      theme: map.theme, logo: map.logo, moduleTitle: map.module, lessonNumber: lesson.number,
+      lessonTitle: lesson.title, videoSrc: "lessons/" + tag + ".mp4",
+      captions: rebaseWords(words, lesson.inSec, lesson.outSec),
+      clipSeconds: lesson.outSec - lesson.inSec, introSeconds: 3, outroSeconds: 2.6, wordsPerPage: 4,
+    };
+    return { lesson, tag, lessonProps, clip: join(clips, tag + ".mp4"), props: join(props, tag + ".json"), output: join(output, tag + ".mp4") };
   });
   assertNew(jobs.flatMap((job) => [job.clip, job.props, job.output]));
+  // Fail on a malformed prop now, before any clip is encoded or rendered.
+  for (const job of jobs) assertValidProps("LessonVideo", job.lessonProps);
+  // The clip is only an intermediate: Remotion encodes the final file from it. Use a working
+  // hardware encoder when there is one (found by a trial encode) and a near-lossless setting,
+  // so the clip does not add a second round of visible compression.
+  const encoder = intermediateVideoArgs();
+  console.log("Intermediate clips: " + encoder.args[encoder.args.indexOf("-c:v") + 1]);
   for (const job of jobs) {
     const { lesson } = job;
     run("ffmpeg", ["-nostdin", "-n", "-ss", String(lesson.inSec), "-i", source, "-t", String(lesson.outSec - lesson.inSec),
-      "-map", "0:v:0", "-map", "0:a?", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "veryfast",
+      "-map", "0:v:0", "-map", "0:a?", ...encoder.args,
       "-c:a", "aac", "-movflags", "+faststart", job.clip]);
-    writeJson(job.props, {
-      theme: map.theme, logo: map.logo, moduleTitle: map.module, lessonNumber: lesson.number,
-      lessonTitle: lesson.title, videoSrc: "lessons/" + job.tag + ".mp4",
-      captions: rebaseWords(words, lesson.inSec, lesson.outSec),
-      clipSeconds: lesson.outSec - lesson.inSec, introSeconds: 3, outroSeconds: 2.6, wordsPerPage: 4,
-    });
+    writeJson(job.props, job.lessonProps);
     render(["render", "src/index.tsx", "LessonVideo", job.output, "--props=" + job.props, "--codec=h264"]);
   }
   console.log("Rendered " + jobs.length + " lesson(s) to out/lessons. No uploads were made.");
