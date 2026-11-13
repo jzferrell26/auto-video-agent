@@ -1,0 +1,23 @@
+{
+  "schema": "clone-config/1",
+  "voice": {
+    "voiceId": "replace-with-your-professional-voice-id",
+    "model": "heygen-voice-1",
+    "speed": 1.1,
+    "language": "en"
+  },
+  "looks": {
+    "desk-a": {
+      "avatarId": "replace-with-your-portrait-look-id",
+      "orientation": "portrait"
+    },
+    "desk-b": {
+      "avatarId": "replace-with-your-landscape-look-id",
+      "orientation": "landscape",
+      "faceX": 0.5
+    }
+  },
+  "video": {
+    "resolution": "1080p"
+  }
+}

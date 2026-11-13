@@ -26,7 +26,8 @@
     "pii:scan": "node engine/pipeline/pii-scan.mjs",
     "redact": "node engine/pipeline/redact.mjs",
     "master:audio": "node engine/pipeline/master-audio.mjs",
-    "archive": "node engine/pipeline/archive.mjs"
+    "archive": "node engine/pipeline/archive.mjs",
+    "clone": "node engine/clone/cli.mjs"
   },
   "dependencies": {
     "@remotion/cli": "4.0.541",
