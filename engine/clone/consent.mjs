@@ -40,7 +40,8 @@ export const consentSchema = z.object({
  * needs: subset of ["voice", "likeness"]; use and platforms come from the job, when one is given.
  */
 export function evaluateConsent(raw, { needs = [], today = localToday(), use, platforms = [] } = {}) {
-  if (raw && typeof raw === "object" && raw.isExample) {
+  // The example's invented identity is refused too, so deleting the isExample line is not enough.
+  if (raw && typeof raw === "object" && (raw.isExample || raw.id === "consent-example-001")) {
     throw new Error("This is the example consent template. Copy it into " + PRIVATE_DIR + "/consent/, replace every invented value with the real written record, and delete the isExample line.");
   }
   const record = consentSchema.parse(raw);

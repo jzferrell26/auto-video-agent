@@ -24,8 +24,10 @@ const COMMANDS = {
   plan: { needs: ["voice", "likeness"], slug: true, job: true, options: [] },
   speech: { needs: ["voice"], slug: true, job: true, options: ["voice-id", "speed", "model", "run"] },
   master: { needs: ["voice"], slug: true, job: false, options: ["input", "dynamics", "target-lufs", "makeup-db"] },
-  upload: { needs: ["voice"], slug: true, job: false, options: ["run"] },
-  lipsync: { needs: ["voice", "likeness"], slug: true, job: false, options: ["look", "avatar-id", "aspect", "engine", "resolution", "timeout-min", "run"] },
+  // upload and lipsync send media to the provider, so they re-check the job's use and platforms
+  // against the consent record, not only its expiry.
+  upload: { needs: ["voice"], slug: true, job: true, options: ["run"] },
+  lipsync: { needs: ["voice", "likeness"], slug: true, job: true, options: ["look", "avatar-id", "aspect", "engine", "resolution", "timeout-min", "run"] },
   sync: { needs: ["voice", "likeness"], slug: true, job: false, options: ["max-lag-ms", "min-score", "face-x"] },
   captions: { needs: ["voice"], slug: true, job: true, options: ["words", "min-match"] },
   looks: { needs: ["likeness"], slug: false, job: false, options: ["batch", "previous", "save-state"] },
@@ -46,8 +48,8 @@ Commands (in order):
   plan      --slug <name> --job <job.json>         Preview the whole route. No network, no media.
   speech    --slug <name> --job <job.json> [--speed 1.1] [--voice-id <id>] [--model <m>] [--run]
   master    --slug <name> [--input <wav>] [--dynamics compressor|gate] [--target-lufs -14] [--makeup-db <dB>]
-  upload    --slug <name> [--run]
-  lipsync   --slug <name> (--look <name> | --avatar-id <id>) [--aspect 9:16] [--engine <e>] [--resolution 1080p] [--timeout-min 20] [--run]
+  upload    --slug <name> --job <job.json> [--run]
+  lipsync   --slug <name> --job <job.json> (--look <name> | --avatar-id <id>) [--aspect 9:16] [--engine <e>] [--resolution 1080p] [--timeout-min 20] [--run]
   sync      --slug <name> [--max-lag-ms 0] [--min-score 0.5] [--face-x 0.5]
   captions  --slug <name> --job <job.json> --words <whisper.words.json> [--min-match 0.6]
   looks     --batch <piece,piece,...> [--previous <look>] [--save-state]
@@ -195,7 +197,13 @@ const HANDLERS = {
     outputDirectory(p.runDir);
     assertNew([p.speechRaw, p.speechReport]);
     const result = await client.generateSpeech({ voiceId, text: job.script, model, speed, language });
-    const bytes = await downloadToFile(result.audioUrl, p.speechRaw, { fetchImpl, maxBytes: 200_000_000, operation: "Speech download" });
+    let bytes;
+    try {
+      bytes = await downloadToFile(result.audioUrl, p.speechRaw, { fetchImpl, maxBytes: 200_000_000, operation: "Speech download" });
+    } catch (error) {
+      // The speech was generated and billed before this download; say so before a rerun pays again.
+      throw new Error((error instanceof Error ? error.message : "Speech download failed.") + " The speech was already generated, so these credits are spent; a rerun generates (and bills) it again.");
+    }
     writeJson(p.speechReport, {
       createdAt: new Date().toISOString(), consentId: consent.id, voice: mask(voiceId), model, speed,
       language: language ?? "auto", characters: job.script.length, durationSec: result.durationSec, bytes,
@@ -216,7 +224,7 @@ const HANDLERS = {
     const report = masterVoice({ input, wavOut: p.master, checkOut: p.masterCheck, overrides, makeupDb });
     const durationSec = probeMedia(p.master).durationSec;
     writeJson(p.masterReport, { createdAt: new Date().toISOString(), consentId: consent.id, source: values.input ? "recording" : "speech", durationSec, ...report });
-    log("Mastered: " + report.afterAac.integratedLufs + " LUFS, true peak " + report.afterAac.truePeakDb + " dBTP after AAC (makeup " + report.makeupDb + " dB). Listen to " + p.runDir + "/voice-master-check.m4a, then upload with: npm run clone -- upload --slug " + slug + " --consent <record>");
+    log("Mastered: " + report.afterAac.integratedLufs + " LUFS, true peak " + report.afterAac.truePeakDb + " dBTP after AAC (makeup " + report.makeupDb + " dB). Listen to " + p.runDir + "/voice-master-check.m4a, then upload with: npm run clone -- upload --slug " + slug + " --job <job.json> --consent <record>");
   },
 
   async upload({ consent, p, values, root, env, fetchImpl, log, slug, sleep }) {
@@ -236,7 +244,7 @@ const HANDLERS = {
     const checksum = sha256Hex(readFileSync(p.master));
     const result = await client.uploadAudio(p.master, { idempotencyKey: "clone-upload-" + slug + "-" + checksum.slice(0, 16) });
     writeJson(p.uploadReport, { uploadedAt: new Date().toISOString(), consentId: consent.id, ...result });
-    log("Uploaded as asset " + mask(result.assetId) + ". Next: npm run clone -- lipsync --slug " + slug + " --look <name> --consent <record>");
+    log("Uploaded as asset " + mask(result.assetId) + ". Next: npm run clone -- lipsync --slug " + slug + " --job <job.json> --look <name> --consent <record>");
   },
 
   async lipsync({ consent, p, values, root, env, fetchImpl, log, slug, sleep }) {

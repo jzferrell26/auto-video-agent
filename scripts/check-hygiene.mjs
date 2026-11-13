@@ -14,8 +14,15 @@ export function inspectFile(path, content) {
   if (/(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk_(?:live|test)_[A-Za-z0-9]{20,})/.test(content)) findings.push("token-shaped value");
   if (/(?:[A-Z]:[\\/](?:Users|Documents and Settings)[\\/][^\s/\\]+|\/(?:Users|home)\/[a-zA-Z0-9._-]+\/)/.test(content)) findings.push("machine-specific home path");
   if (/https?:\/\/[^\s)]+(?:X-Amz-Signature|X-Goog-Signature)=/i.test(content)) findings.push("signed media URL");
-  // Provider ids (avatar, look, voice, asset) are 32 hex characters; keep them in ignored clone-private/.
-  if (/(?:^|[^0-9A-Za-z])[0-9a-fA-F]{32}(?![0-9A-Za-z])/.test(content)) findings.push("provider-id-shaped value");
+  // Provider ids (avatar, look, voice, asset) and many API keys are 32 hex characters; keep them in
+  // ignored clone-private/ or .env. A real checksum can stay if its line says hygiene-allow-hex.
+  if (!/(^|\/)package-lock\.json$/.test(path)) {
+    content.split(/\r?\n/).forEach((line, index) => {
+      if (/(?:^|[^0-9A-Za-z])[0-9a-fA-F]{32}(?![0-9A-Za-z])/.test(line) && !line.includes("hygiene-allow-hex")) {
+        findings.push("32-hex value on line " + (index + 1) + " (looks like a provider id or API key); move it to clone-private/ or .env, or add a hygiene-allow-hex comment if it is a checksum");
+      }
+    });
+  }
   if (path.endsWith(".example") && path.includes(".env")) {
     const assignments = content.split(/\r?\n/).filter((line) => /^[A-Z][A-Z0-9_]*=/.test(line));
     if (assignments.some((line) => line.split("=").slice(1).join("=").trim())) findings.push("populated example environment");

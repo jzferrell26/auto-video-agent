@@ -26,7 +26,8 @@ const example = (name) => JSON.parse(readFileSync(join(ROOT, "engine/examples", 
 const consentRecord = (changes = {}) => {
   const record = example("clone-consent.example.json");
   delete record.isExample;
-  return { ...record, ...changes };
+  // A test record needs its own id: the example's id is refused as a template.
+  return { ...record, id: "consent-test-001", ...changes };
 };
 const testConfig = {
   schema: "clone-config/1",
@@ -72,7 +73,7 @@ describe("consent gate", () => {
   const needs = ["voice", "likeness"];
   test("accepts a complete record that covers the requested use and platforms", () => {
     const record = evaluateConsent(consentRecord(), { needs, today: TODAY, use: "short-form", platforms: ["YouTube-Shorts"] });
-    expect(record.id).toBe("consent-example-001");
+    expect(record.id).toBe("consent-test-001");
   });
   test("refuses the unedited example template", () => {
     expect(() => evaluateConsent(example("clone-consent.example.json"), { needs, today: TODAY })).toThrow(/example consent template/);
@@ -102,7 +103,7 @@ describe("consent gate", () => {
   });
   test("loads records only from inside the ignored clone-private folder", () => {
     const root = tempRoot();
-    expect(loadConsent("clone-private/consent/record.json", { root }).id).toBe("consent-example-001");
+    expect(loadConsent("clone-private/consent/record.json", { root }).id).toBe("consent-test-001");
     writeFileSync(join(root, "elsewhere.json"), JSON.stringify(consentRecord()));
     expect(() => loadConsent("elsewhere.json", { root })).toThrow(/inside the ignored clone-private/);
     expect(() => loadConsent("clone-private/../elsewhere.json", { root })).toThrow(/inside the ignored clone-private/);
@@ -120,8 +121,14 @@ describe("private folder stays out of git", () => {
     expect(inspectFile("nested/clone-private/config.json", "{}")).toContain("generated/private directory");
   });
   test("the hygiene check flags provider-id-shaped values but not commit pins", () => {
-    expect(inspectFile("notes.md", "look " + "a1".repeat(16))).toContain("provider-id-shaped value");
+    const findings = inspectFile("notes.md", ["intro", "look " + "a1".repeat(16)].join("\n"));
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatch(/^32-hex value on line 2 /);
     expect(inspectFile("ci.yml", "uses: actions/checkout@" + "b".repeat(40))).toEqual([]);
+  });
+  test("a marked checksum line and the lockfile are not flagged", () => {
+    expect(inspectFile("notes.md", "md5 " + "a1".repeat(16) + " <!-- hygiene-allow-hex -->")).toEqual([]);
+    expect(inspectFile("package-lock.json", "\"x\": \"" + "a1".repeat(16) + "\"")).toEqual([]);
   });
   test("the example environment keeps HEYGEN_API_KEY empty", () => {
     expect(inspectFile(".env.example", readFileSync(join(ROOT, ".env.example"), "utf8"))).toEqual([]);
@@ -484,8 +491,8 @@ describe("clone CLI (no network, no media)", () => {
     await expect(runClone(["speech", ...consentArgs, "--slug", "practice", "--job", "brand-props/job.json"], { root, log: quiet })).rejects.toThrow(/Choose a speed/);
   });
   test("consent is checked before config, job scope and media", async () => {
-    const voiceOnly = tempRoot({ consent: consentRecord({ authorizes: { voice: true, likeness: false } }) });
-    await expect(runClone(["lipsync", ...consentArgs, "--slug", "practice", "--look", "desk-a"], { root: voiceOnly, log: quiet })).rejects.toThrow(/does not authorize the likeness/);
+    const voiceOnly = tempRoot({ consent: consentRecord({ authorizes: { voice: true, likeness: false } }), job });
+    await expect(runClone(["lipsync", ...consentArgs, "--job", "brand-props/job.json", "--slug", "practice", "--look", "desk-a"], { root: voiceOnly, log: quiet })).rejects.toThrow(/does not authorize the likeness/);
     const narrow = tempRoot({ consent: consentRecord({ platforms: ["tiktok"] }), config: testConfig, job });
     await expect(runClone(["speech", ...consentArgs, "--slug", "practice", "--job", "brand-props/job.json"], { root: narrow, log: quiet })).rejects.toThrow(/platform "youtube-shorts"/);
     const template = tempRoot({ consent: example("clone-consent.example.json"), config: testConfig, job });
@@ -512,14 +519,14 @@ describe("clone CLI (no network, no media)", () => {
     expect(second[0].look).not.toBe(state.lastLook);
   });
   test("look names must be the config's own entries", async () => {
-    const root = tempRoot({ config: testConfig });
-    await expect(runClone(["lipsync", ...consentArgs, "--slug", "practice", "--look", "constructor"], { root, log: quiet })).rejects.toThrow(/is not in clone-private\/config.json/);
+    const root = tempRoot({ config: testConfig, job });
+    await expect(runClone(["lipsync", ...consentArgs, "--job", "brand-props/job.json", "--slug", "practice", "--look", "constructor"], { root, log: quiet })).rejects.toThrow(/is not in clone-private\/config.json/);
   });
   test("lipsync previews the shape actually requested for a look", async () => {
-    const root = tempRoot({ config: testConfig });
+    const root = tempRoot({ config: testConfig, job });
     const preview = async (...extra) => {
       const lines = [];
-      await runClone(["lipsync", ...consentArgs, "--slug", "aspect-test-" + Date.now(), "--look", "desk-b", ...extra], { root, log: (line) => lines.push(line) });
+      await runClone(["lipsync", ...consentArgs, "--job", "brand-props/job.json", "--slug", "aspect-test-" + Date.now(), "--look", "desk-b", ...extra], { root, log: (line) => lines.push(line) });
       return lines.join(" | ");
     };
     expect(await preview()).toContain("aspect 16:9");
@@ -578,4 +585,12 @@ describe.skipIf(!ffmpegReady)("FFmpeg media steps (synthetic media)", () => {
     expect([result.output.width, result.output.height]).toEqual([1080, 1920]);
     expect(result.plan.window.width % 2).toBe(0);
   }, 120000);
+});
+
+describe("security follow-ups", () => {
+  test("the example identity is refused even without the isExample marker", () => {
+    const raw = JSON.parse(readFileSync(new URL("../engine/examples/clone-consent.example.json", import.meta.url), "utf8"));
+    delete raw.isExample;
+    expect(() => evaluateConsent(raw, { needs: ["voice"] })).toThrow(/example consent template/);
+  });
 });

@@ -70,8 +70,10 @@ replace it, and it does not replace this record.
 | 7 | `props` | Writes `SplicedShort` props with captions, kickers and B-roll | Local |
 | Batch | `looks` | Assigns looks so no two pieces in a row share one | Local |
 
-Every command takes `--consent`; most take `--slug <name>`, and `plan`, `speech`,
-`captions` and `props` also take `--job`. Run `npm run clone -- --help` for every option.
+Every command takes `--consent`; most take `--slug <name>`, and `plan`, `speech`, `upload`,
+`lipsync`, `captions` and `props` also take `--job`, so the steps that send your voice or
+likeness to HeyGen re-check the job's use and platforms against the consent record. Run
+`npm run clone -- --help` for every option.
 
 ```bash
 npm run clone -- plan --consent clone-private/consent/me.json --slug tip-01 --job brand-props/tip-01.json
