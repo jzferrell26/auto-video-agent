@@ -1,7 +1,9 @@
 // Builds props for the SplicedShort composition from the synced clip, aligned captions and the
 // job's kickers and B-roll. Pure data in, pure data out. The contract mirrors SplicedShort's
-// prop types (segments, captions, clip cutaways, kickers); SplicedShort itself ships separately.
+// prop types (segments, captions, clip cutaways, kickers), and every result is also checked
+// against the composition registry, so a future SplicedShort change fails here, not at render.
 import { z } from "zod";
+import { assertValidProps } from "../pipeline/validate-props.mjs";
 import { normalizeWord } from "./common.mjs";
 import { CROP_WIDTH_GUIDE, publicMediaPath, validateClipCrop } from "./framing.mjs";
 
@@ -95,11 +97,13 @@ export function buildSplicedShortProps({ src, durationSec, captions, job }) {
     if (cutaways[i].atMs < cutaways[i - 1].atMs + cutaways[i - 1].durMs) throw new Error("B-roll clips overlap; space them out.");
   }
 
-  return splicedShortPropsSchema.parse({
+  const props = splicedShortPropsSchema.parse({
     segments: [{ src, fromFrame: 0, toFrame, centerX: job.centerX, zoom: job.zoom }],
     captions: kept,
     cutaways,
     kickers,
     ...job.spliced,
   });
+  assertValidProps("SplicedShort", props);
+  return props;
 }

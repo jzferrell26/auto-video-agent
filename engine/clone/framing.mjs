@@ -3,7 +3,7 @@ import { num } from "./audio.mjs";
 
 export const PORTRAIT = Object.freeze({ width: 1080, height: 1920 });
 export const FACE_WINDOW = Object.freeze({ width: 1080, height: 1350 }); // 4:5, centered vertically
-/** House guidance: full-width screen captures are unreadable on a phone; crop to about this width. */
+/** Full-width screen captures are unreadable on a phone, so B-roll crops aim for about this width. */
 export const CROP_WIDTH_GUIDE = Object.freeze({ min: 560, max: 640 });
 
 const even = (value) => Math.max(2, Math.round(value / 2) * 2);

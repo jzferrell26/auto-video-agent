@@ -362,7 +362,7 @@ const HANDLERS = {
     assertNew([p.props]);
     writeJson(p.props, props);
     log("Wrote brand-props/clone-" + slug + ".json for the SplicedShort composition (" + props.captions.length + " captions, " + props.cutaways.length + " B-roll clips, " + props.kickers.length + " kickers).");
-    log("Render locally once SplicedShort is registered: npx remotion render src/index.tsx SplicedShort out/clone-" + slug + ".mp4 --props=brand-props/clone-" + slug + ".json");
+    log("Render locally (validated, result stays in out/): npm run render:job -- --composition SplicedShort --props brand-props/clone-" + slug + ".json --tag clone-" + slug);
     return props;
   },
 };

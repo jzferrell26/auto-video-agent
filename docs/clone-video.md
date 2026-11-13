@@ -200,11 +200,12 @@ npm run clone -- looks --consent clone-private/consent/me.json --batch tip-01,ti
 
 `props` writes `brand-props/clone-<slug>.json` with one segment (the synced clip on a 30 fps
 grid), the aligned captions, B-roll as `clip` cutaways (crop, source size, optional eyebrow;
-the cutaway whoosh sound is off), and kickers (`atMs`, `durMs`, `text`). The `SplicedShort`
-composition is added to this toolkit separately; once it is registered, render with:
+the cutaway whoosh sound is off), and kickers (`atMs`, `durMs`, `text`). The props are checked
+against the `SplicedShort` entry in the composition registry before they are written. Render
+with the validating wrapper; the result stays in `out/`:
 
 ```bash
-npx remotion render src/index.tsx SplicedShort out/clone-tip-01.mp4 --props=brand-props/clone-tip-01.json
+npm run render:job -- --composition SplicedShort --props brand-props/clone-tip-01.json --tag clone-tip-01
 ```
 
 Watch and listen to the whole render before you share it.

@@ -17,6 +17,7 @@ import { SequenceMatcher, alignScriptToWords, mergeWhisperTokens } from "../engi
 import { landscapePrepArgs, landscapePrepFilter, landscapePrepPlan, publicMediaPath, validateClipCrop } from "../engine/clone/framing.mjs";
 import { assignLooks } from "../engine/clone/looks.mjs";
 import { buildSplicedShortProps, findPhrase, splicedShortPropsSchema } from "../engine/clone/props.mjs";
+import { validateProps } from "../engine/pipeline/validate-props.mjs";
 import { checkSyncAndMux, hasTool, masterVoice, probeMedia, runTool } from "../engine/clone/media.mjs";
 import { runClone } from "../engine/clone/cli.mjs";
 import { inspectFile } from "../scripts/check-hygiene.mjs";
@@ -432,6 +433,8 @@ describe("SplicedShort props", () => {
   test("emits the SplicedShort contract as pure data", () => {
     const props = build();
     expect(() => splicedShortPropsSchema.parse(props)).not.toThrow();
+    // The same props must also pass the composition registry that gates every render.
+    expect(validateProps("SplicedShort", props)).toEqual([]);
     expect(props.segments).toEqual([{ src: "clone/practice/clip.mp4", fromFrame: 0, toFrame: 480, centerX: 0.5, zoom: 1 }]);
     expect(props.wordsPerPage).toBe(3);
     const before = findPhrase(props.captions, "Before you water,");
