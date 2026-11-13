@@ -219,6 +219,8 @@ registry first, and leaves the result in `out/`. Everything that moves files is 
 the frame grid, keeps only the words that survive each cut, and retimes them into output time,
 so captions and cues cannot drift from the picture. `whooshSrc` and `sfx` are optional; without
 them the short is silent apart from the footage audio. `safeArea` is optional and has no preset.
+Text cutaways (title, quote, stat, cta) show exactly what you put in the props. Quote only people
+who agreed to it, and never invent testimonials, numbers or results.
 
 ## Input formats
 

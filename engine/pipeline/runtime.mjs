@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, isAbsolute, resolve, join, relative } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { z } from "zod";
 import { REPO_ROOT } from "./paths.mjs";
 
@@ -108,8 +108,27 @@ export function rebaseWords(words, startSec, endSec) {
     .map((word) => ({ ...word, startMs: word.startMs - start, endMs: Math.min(word.endMs, end) - start }));
 }
 
+/** The "// Usage:" block at the top of a script, or null when the script has none. */
+export function usageText(moduleUrl) {
+  const lines = readFileSync(fileURLToPath(moduleUrl), "utf8").split(/\r?\n/);
+  const start = lines.findIndex((line) => /^\/\/ Usage:/.test(line));
+  if (start === -1) return null;
+  const body = [];
+  for (const line of lines.slice(start + 1)) {
+    if (!/^\/\/ {2,}\S/.test(line)) break;
+    body.push(line.replace(/^\/\/ {2}/, ""));
+  }
+  return body.length ? `Usage:\n${body.join("\n")}` : null;
+}
+
 export function main(moduleUrl, callback) {
   if (process.argv[1] && moduleUrl === pathToFileURL(resolve(process.argv[1])).href) {
+    // --help prints the script's own usage header; scripts without one handle --help themselves.
+    const usage = process.argv.slice(2).includes("--help") ? usageText(moduleUrl) : null;
+    if (usage) {
+      console.log(usage);
+      return;
+    }
     Promise.resolve().then(() => callback(process.argv.slice(2))).catch((error) => {
       if (error instanceof z.ZodError) {
         console.error("Invalid input: " + error.issues.map((issue) => issue.path.join(".") + ": " + issue.message).join("; "));
